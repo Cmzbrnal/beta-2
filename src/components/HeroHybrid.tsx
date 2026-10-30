@@ -91,15 +91,24 @@ export default function HeroHybrid({ onOpenModal }: HeroHybridProps) {
                 const img = imagesRef.current[frameIndexRef.current];
                 if (img) {
                     const isMobile = canvas.width < 768;
-                    const scaleFactor = isMobile ? 0.9 : 0.5;
+                    const scaleFactor = isMobile ? 0.94 : 0.58;
 
                     const aspectRatio = img.naturalWidth / img.naturalHeight;
 
+                    const maxHeightRatio = isMobile ? 0.5 : 0.56;
+                    const maxHeight = canvas.height * maxHeightRatio;
                     let targetWidth = canvas.width * scaleFactor;
                     let targetHeight = targetWidth / aspectRatio;
 
+                    if (targetHeight > maxHeight) {
+                        targetHeight = maxHeight;
+                        targetWidth = targetHeight * aspectRatio;
+                    }
+
                     const x = (canvas.width - targetWidth) / 2;
-                    const y = ((canvas.height - targetHeight) / 2) * 0.35;
+                    const y = isMobile
+                        ? canvas.height * 0.11
+                        : canvas.height * 0.07;
 
                     ctx.fillStyle = '#020202';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -157,13 +166,13 @@ export default function HeroHybrid({ onOpenModal }: HeroHybridProps) {
 
             {/* Content Overlay: Static & Centered at the Bottom */}
             {!isLoading && (
-                <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-end pb-20 md:pb-28 text-center px-4 pointer-events-auto">
+                <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-end pb-16 sm:pb-20 md:pb-28 text-center px-4 pointer-events-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5, duration: 0.8 }}
                     >
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tighter bg-gradient-to-br from-black via-white to-black bg-clip-text text-transparent pb-2 drop-shadow-2xl">
+                        <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tighter bg-gradient-to-br from-black via-white to-black bg-clip-text text-transparent pb-2 drop-shadow-2xl leading-[0.95]">
                             Gestión de <br className="md:hidden" /> Proyectos
                         </h1>
                     </motion.div>
@@ -185,7 +194,7 @@ export default function HeroHybrid({ onOpenModal }: HeroHybridProps) {
                             borderRadius="9999px"
                             duration={2500}
                             containerClassName="h-auto w-auto shadow-[0_0_30px_rgba(255,85,0,0.5)] group-hover:shadow-[0_0_65px_rgba(255,85,0,0.9)] group-active:shadow-[0_0_90px_rgba(255,85,0,1)] transition-all duration-300 cursor-pointer"
-                            className="bg-electric-orange border-none text-white font-bold text-base md:text-lg tracking-widest px-8 py-4 group-hover:brightness-110 group-active:brightness-125 transition-all"
+                            className="bg-electric-orange border-none text-white font-bold text-sm sm:text-base md:text-lg tracking-wider md:tracking-widest px-6 sm:px-8 py-3.5 sm:py-4 group-hover:brightness-110 group-active:brightness-125 transition-all"
                         >
                             ÚNETE AHORA
                         </MovingBorderButton>

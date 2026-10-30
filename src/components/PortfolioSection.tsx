@@ -9,7 +9,7 @@ const projects = [
     {
         title: "Ingeniero Locaso",
         description: "Sistema automatizado de gestión académica con IA.",
-        image: "/images/proyectos/ingeniero-locaso.png",
+        image: "/images/proyectos/ingeniero-locaso.svg",
         contexto: "Este proyecto surgió de la necesidad de automatizar procesos académicos que consumían tiempo excesivo. La gestión manual de notas, horarios y comunicados generaba errores frecuentes y una experiencia deficiente para alumnos y docentes.",
         solucion: "Se implementó una plataforma inteligente con IA que centraliza la gestión académica, automatiza notificaciones, y ofrece dashboards en tiempo real. Se aplicó metodología Scrum con sprints de 2 semanas logrando un 70% de reducción en tiempos operativos.",
         anexos: [
@@ -20,7 +20,7 @@ const projects = [
     {
         title: "Transformación Digital",
         description: "Red de integración de datos para empresas en crecimiento.",
-        image: "/images/proyectos/transformacion-digital.png",
+        image: "/images/proyectos/transformacion-digital.svg",
         contexto: "Las empresas en expansión enfrentan silos de información que frenan su crecimiento. Los datos dispersos en múltiples sistemas generan decisiones lentas y costosas.",
         solucion: "Diseñamos una arquitectura de integración de datos con APIs RESTful y un ETL robusto. Se usó Kanban para gestión visual del flujo, logrando integrar 5 sistemas core en 3 meses.",
         anexos: [
@@ -31,7 +31,7 @@ const projects = [
     {
         title: "Gestión Ágil",
         description: "Visualización de flujos de trabajo con metodología Scrum.",
-        image: "/images/proyectos/gestion-agil.png",
+        image: "/images/proyectos/gestion-agil.svg",
         contexto: "Equipos con baja visibilidad del avance real del proyecto y dificultad para detectar cuellos de botella a tiempo, resultando en entregas tardías.",
         solucion: "Implementación de tableros Scrum físicos y digitales con métricas de velocity, burndown charts y retrospectivas estructuradas. Se logró una mejora del 45% en predictibilidad de entregas.",
         anexos: [
@@ -42,7 +42,7 @@ const projects = [
     {
         title: "PMO Estratégica",
         description: "Oficina de proyectos con enfoque en entrega de valor.",
-        image: "/images/proyectos/pmo-estrategica.png",
+        image: "/images/proyectos/pmo-estrategica.svg",
         contexto: "Organización con múltiples proyectos sin un ente centralizador, causando duplicación de esfuerzos, falta de estándares y baja alineación estratégica.",
         solucion: "Constitución de una PMO con governance model, marcos de referencia estandarizados y KPIs de portafolio. Alineación de proyectos a objetivos estratégicos con OKRs trimestrales.",
         anexos: [
@@ -53,7 +53,7 @@ const projects = [
     {
         title: "Optimización de Procesos",
         description: "Eficiencia y productividad a través de mejora continua.",
-        image: "/images/proyectos/optimizacion-procesos.png",
+        image: "/images/proyectos/optimizacion-procesos.svg",
         contexto: "Procesos operativos con alta tasa de reprocesos y tiempos de ciclo elevados. Falta de estandarización y métricas claras de eficiencia.",
         solucion: "Aplicación de Lean Six Sigma para identificar desperdicios y rediseñar flujos críticos. Automatización de pasos manuales y capacitación del equipo en mejora continua, logrando 30% de reducción en tiempo de ciclo.",
         anexos: [
@@ -263,12 +263,12 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                 </motion.div>
 
                 {/* Carousel Container */}
-                <div className="relative flex items-center justify-center h-[520px] md:h-[620px]">
+                <div className="relative flex items-center justify-center h-[560px] md:h-[620px]">
 
                     {/* Left Arrow */}
                     <button
                         onClick={prevSlide}
-                        className="absolute left-2 md:left-8 top-[38%] md:top-[42%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
+                        className="absolute left-2 md:left-8 top-[44%] md:top-[42%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
                     >
                         <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </button>
@@ -283,9 +283,9 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                                 const isCenter = offset === 0;
                                 const rotation = offset * 8;
                                 // Wider spread so side cards are clearly visible
-                                const xOffset = isMobile ? offset * 55 : offset * 145;
+                                const xOffset = isMobile ? offset * 90 : offset * 145;
                                 const translateX = `calc(-50% + ${xOffset}px)`;
-                                const scale = isCenter ? 1 : (isMobile ? 0.75 : 0.72) - Math.abs(offset) * 0.04;
+                                const scale = isCenter ? 1 : (isMobile ? 0.7 : 0.72) - Math.abs(offset) * 0.04;
                                 const opacity = isCenter ? 1 : Math.abs(offset) === 1 ? 0.55 : 0.25;
                                 const zIndex = 10 - Math.abs(offset);
 
@@ -303,14 +303,14 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                                         exit={{ opacity: 0, scale: 0.8, x: "calc(-50% + 0px)" }}
                                         transition={{ duration: 0.5, ease: "easeOut" }}
                                         onClick={() => goToSlide(actualIndex)}
-                                        className="absolute cursor-pointer left-1/2 top-[10%] md:top-[25%] -translate-y-1/2 flex flex-col items-center"
+                                        className="absolute cursor-pointer left-1/2 top-[44%] md:top-[42%] -translate-y-1/2 flex flex-col items-center"
                                         style={{ zIndex }}
                                     >
                                         {/* Card */}
                                         <motion.div
                                             whileHover={isCenter ? { scale: 1.05, boxShadow: "0 0 80px rgba(255,255,255,0.5)" } : {}}
                                             className={cn(
-                                                "w-[200px] h-[280px] md:w-[320px] md:h-[400px] rounded-3xl overflow-hidden bg-void-black",
+                                                "w-[180px] h-[250px] sm:w-[200px] sm:h-[280px] md:w-[320px] md:h-[400px] rounded-3xl overflow-hidden bg-void-black",
                                                 "border-2 transition-all duration-300 relative",
                                                 isCenter
                                                     ? "border-white/40 shadow-[0_0_60px_rgba(255,255,255,0.35)]"
@@ -371,7 +371,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                     {/* Right Arrow */}
                     <button
                         onClick={nextSlide}
-                        className="absolute right-2 md:right-8 top-[40%] md:top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
+                        className="absolute right-2 md:right-8 top-[44%] md:top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
                     >
                         <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </button>

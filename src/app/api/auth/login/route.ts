@@ -1,9 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const DATA_FILE = path.join(process.cwd(), 'src', 'data', 'miembros.json');
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -19,59 +14,47 @@ export async function POST(request: NextRequest) {
         const codigoUpper = String(codigoUni).trim().toUpperCase();
 
         // 1. Si existe webhook de Google Sheets, consultar la pestaña "Miembros"
-        const googleWebhook = process.env.GOOGLE_SHEETS_WEBHOOK;
-        if (googleWebhook) {
-            try {
-                const sheetRes = await fetch(`${googleWebhook}?sheet=Miembros&codigoUni=${encodeURIComponent(codigoUpper)}`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const sheetData = await sheetRes.json();
-                if (sheetData.success && sheetData.member) {
-                    if (sheetData.member.password === password) {
-                        return NextResponse.json({
-                            success: true,
-                            member: {
-                                codigoUni: sheetData.member.codigoUni,
-                                nombres: sheetData.member.nombres,
-                                carrera: sheetData.member.carrera,
-                                ciclo: sheetData.member.ciclo,
-                                estado: sheetData.member.estado || 'Miembro'
-                            }
-                        });
-                    } else {
-                        return NextResponse.json(
-                            { success: false, message: 'Contraseña incorrecta' },
-                            { status: 401 }
-                        );
-                    }
-                }
-            } catch (err) {
-                console.warn('Google Sheets no disponible, usando base de datos local:', err);
-            }
+        const googleWebhook = process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+        if (!googleWebhook) {
+            return NextResponse.json(
+                { success: false, message: 'Google Sheets no está configurado.' },
+                { status: 503 }
+            );
         }
 
-        // 2. Validación con base local (miembros.json)
-        if (fs.existsSync(DATA_FILE)) {
-            const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-            const miembros = JSON.parse(raw || '[]');
-
-            const miembro = miembros.find(
-                (m: any) => String(m.codigoUni).trim().toUpperCase() === codigoUpper
-            );
-
-            if (miembro && miembro.password === password) {
+        try {
+            const sheetRes = await fetch(`${googleWebhook}?sheet=Miembros&codigoUni=${encodeURIComponent(codigoUpper)}`, {
+                cache: 'no-store',
+                signal: AbortSignal.timeout(10000)
+            });
+            const sheetData = await sheetRes.json().catch(() => null);
+            if (!sheetRes.ok) {
+                throw new Error('Google Sheets no respondió correctamente.');
+            }
+            if (sheetData?.success && sheetData.member) {
+                if (sheetData.member.password !== password) {
+                    return NextResponse.json(
+                        { success: false, message: 'Contraseña incorrecta' },
+                        { status: 401 }
+                    );
+                }
                 return NextResponse.json({
                     success: true,
                     member: {
-                        codigoUni: miembro.codigoUni,
-                        nombres: miembro.nombres,
-                        carrera: miembro.carrera,
-                        ciclo: miembro.ciclo,
-                        estado: miembro.estado || 'Miembro'
+                        codigoUni: sheetData.member.codigoUni,
+                        nombres: sheetData.member.nombres,
+                        carrera: sheetData.member.carrera,
+                        ciclo: sheetData.member.ciclo,
+                        estado: sheetData.member.estado || 'Miembro'
                     }
                 });
             }
+        } catch (err) {
+            console.error('Error consultando Google Sheets:', err);
+            return NextResponse.json(
+                { success: false, message: 'No se pudo consultar la base de miembros.' },
+                { status: 502 }
+            );
         }
 
         return NextResponse.json(

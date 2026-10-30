@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
-const DATA_DIR = path.join(process.cwd(), 'src', 'data');
-const DATA_FILE = path.join(DATA_DIR, 'postulaciones.json');
-
-// Clave privada para la directiva de CIPRO
 const DIRECTIVA_KEY = process.env.CIPRO_DIRECTIVA_KEY || 'directiva_cipro_2026';
 
-function ensureDataFile() {
-    if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), 'utf-8');
-    }
+function getWebhookUrl() {
+    return process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK_URL;
 }
 
 export async function POST(request: NextRequest) {
@@ -29,74 +18,41 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        ensureDataFile();
-
         const now = new Date();
-        const fecha = now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        const hora = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
         const nuevaPostulacion = {
             id: `POST-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            fecha,
-            hora,
+            fecha: now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+            hora: now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             codigoUni: String(codigoUni).trim().toUpperCase(),
             nombres: String(nombres).trim(),
             correo: String(correo).trim().toLowerCase(),
             whatsapp: String(whatsapp).trim(),
             carrera: String(carrera).trim(),
             ciclo: String(ciclo).trim(),
-            estado: 'Postulación' // Estado solicitado: Postulación
+            estado: 'Postulación'
         };
 
-        // 1. Guardar localmente como respaldo
-        const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
-        const postulaciones = JSON.parse(rawData || '[]');
-        postulaciones.push(nuevaPostulacion);
-        fs.writeFileSync(DATA_FILE, JSON.stringify(postulaciones, null, 2), 'utf-8');
-
-        // 2. Reenvío a Google Sheets (Pestaña "Postulaciones")
-        const googleWebhook =
-            process.env.GOOGLE_SHEETS_WEBHOOK ||
-            process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-
+        const googleWebhook = getWebhookUrl();
         if (!googleWebhook) {
-            console.error('Google Sheets no está configurado: falta GOOGLE_SHEETS_WEBHOOK');
             return NextResponse.json(
-                {
-                    success: false,
-                    message: 'La postulación se guardó localmente, pero Google Sheets no está configurado en Vercel.'
-                },
+                { success: false, message: 'Google Sheets no está configurado en Vercel.' },
                 { status: 503 }
             );
         }
 
-        try {
-            const webhookResponse = await fetch(googleWebhook, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sheet: 'Postulaciones',
-                    data: nuevaPostulacion
-                }),
-                cache: 'no-store',
-                signal: AbortSignal.timeout(10000)
-            });
+        const webhookResponse = await fetch(googleWebhook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sheet: 'Postulaciones', data: nuevaPostulacion }),
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10000)
+        });
+        const webhookBody = await webhookResponse.json().catch(() => null);
 
-            const webhookBody = await webhookResponse.json().catch(() => null);
-            if (!webhookResponse.ok || webhookBody?.success !== true) {
-                throw new Error(
-                    `Google Sheets respondió ${webhookResponse.status}: ${
-                        webhookBody?.error || webhookBody?.message || 'respuesta no válida'
-                    }`
-                );
-            }
-        } catch (webhookErr) {
-            console.error('Error al sincronizar con Google Sheets:', webhookErr);
+        if (!webhookResponse.ok || webhookBody?.success !== true) {
+            console.error('Google Sheets rechazó la postulación:', webhookBody);
             return NextResponse.json(
-                {
-                    success: false,
-                    message: 'La postulación se guardó localmente, pero no pudo sincronizarse con Google Sheets.'
-                },
+                { success: false, message: 'Google Sheets rechazó la postulación.' },
                 { status: 502 }
             );
         }
@@ -106,45 +62,54 @@ export async function POST(request: NextRequest) {
             message: 'Postulación registrada exitosamente',
             id: nuevaPostulacion.id
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error en API postulaciones:', error);
         return NextResponse.json(
-            { success: false, message: 'Error interno del servidor al procesar la postulación' },
-            { status: 500 }
+            { success: false, message: 'No se pudo conectar con Google Sheets.' },
+            { status: 502 }
         );
     }
 }
 
-// Endpoint estrictamente para la DIRECTIVA (los miembros comunes no acceden aquí)
 export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('authorization');
         const keyParam = request.nextUrl.searchParams.get('key');
-
         const isAuthorized =
             keyParam === DIRECTIVA_KEY ||
             authHeader === `Bearer ${DIRECTIVA_KEY}`;
 
         if (!isAuthorized) {
             return NextResponse.json(
-                { success: false, message: 'Acceso denegado. Información reservada exclusivamente para la Directiva de CIPRO.' },
+                { success: false, message: 'Acceso denegado.' },
                 { status: 403 }
             );
         }
 
-        ensureDataFile();
-        const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
-        const postulaciones = JSON.parse(rawData || '[]');
+        const googleWebhook = getWebhookUrl();
+        if (!googleWebhook) {
+            return NextResponse.json(
+                { success: false, message: 'Google Sheets no está configurado.' },
+                { status: 503 }
+            );
+        }
 
-        return NextResponse.json({
-            success: true,
-            total: postulaciones.length,
-            postulaciones
+        const sheetResponse = await fetch(`${googleWebhook}?sheet=Postulaciones`, {
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10000)
         });
-    } catch (error: any) {
+        const sheetData = await sheetResponse.json().catch(() => null);
+
+        if (!sheetResponse.ok || sheetData?.success !== true) {
+            throw new Error(sheetData?.error || 'No se pudieron consultar las postulaciones.');
+        }
+
+        return NextResponse.json(sheetData);
+    } catch (error) {
+        console.error('Error al consultar postulaciones:', error);
         return NextResponse.json(
-            { success: false, message: 'Error al consultar postulaciones' },
-            { status: 500 }
+            { success: false, message: 'Error al consultar postulaciones.' },
+            { status: 502 }
         );
     }
 }

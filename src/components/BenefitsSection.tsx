@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, BookOpen, Users, X, Plus, Pencil } from 'lucide-react';
+import { Calendar, Users, X, Plus, Pencil } from 'lucide-react';
 import BenefitCard from '@/components/ui/benefit-card';
 
 // ─── Datos base de las tarjetas ───────────────────────────────────────────────
@@ -15,15 +15,6 @@ const benefits = [
         imageSrc: "/imagenes/cards/eventos_exclusivos.webp",
         imageAlt: "Eventos profesionales y networking",
         hasModal: true,
-    },
-    {
-        id: 'recursos',
-        icon: BookOpen,
-        title: "Recursos Premium",
-        description: "Biblioteca curada de plantillas, guías y herramientas de gestión.",
-        imageSrc: "/imagenes/cards/recursos_premium.webp",
-        imageAlt: "Recursos y materiales de aprendizaje",
-        hasModal: false, // calls onAccessRestrictedResource instead
     },
     {
         id: 'capacitaciones',
@@ -317,10 +308,6 @@ export default function BenefitsSection({ member, onAccessRestrictedResource }: 
     const [openModal, setOpenModal] = useState<string | null>(null);
 
     const handleCardClick = (id: string) => {
-        if (id === 'recursos') {
-            if (onAccessRestrictedResource) onAccessRestrictedResource('Recursos Premium');
-            return;
-        }
         setOpenModal(prev => (prev === id ? null : id));
     };
 

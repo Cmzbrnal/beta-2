@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import SmartHeader from '@/components/SmartHeader';
 import HeroHybrid from '@/components/HeroHybrid';
 import PortfolioSection from '@/components/PortfolioSection';
@@ -29,27 +29,13 @@ export default function Home() {
     // Mensaje de aviso cuando intentan entrar a la Biblioteca de Recursos
     const [loginNotice, setLoginNotice] = useState<{ title?: string; message?: string }>({});
 
-    // Cargar sesión de miembro si ya inició sesión previamente
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem('cipro_current_member');
-            if (saved) {
-                setCurrentMember(JSON.parse(saved));
-            }
-        } catch (e) {
-            console.error('Error cargando sesión de miembro', e);
-        }
-    }, []);
-
     const handleLoginSuccess = (member: MemberData) => {
         setCurrentMember(member);
-        localStorage.setItem('cipro_current_member', JSON.stringify(member));
         setLoginNotice({});
     };
 
     const handleLogout = () => {
         setCurrentMember(null);
-        localStorage.removeItem('cipro_current_member');
         setLoginNotice({});
     };
 

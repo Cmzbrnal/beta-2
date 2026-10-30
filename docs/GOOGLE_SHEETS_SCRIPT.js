@@ -52,17 +52,6 @@ function setupSheets() {
     sheetMiembros.getRange("A1:H1").setFontWeight("bold").setBackground("#131926").setFontColor("#FFFFFF");
     sheetMiembros.setFrozenRows(1);
 
-    // Fila de ejemplo
-    sheetMiembros.appendRow([
-      "20233999A",
-      "cipro2026",
-      "Miembro Directiva",
-      "miembro@uni.pe",
-      "987654321",
-      "Ingeniería Industrial",
-      "7mo Ciclo",
-      "Miembro"
-    ]);
   }
 }
 
@@ -139,6 +128,29 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({
         success: false,
         message: "Miembro no encontrado"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (params.sheet === "Postulaciones") {
+      const sheet = ss.getSheetByName("Postulaciones");
+      const values = sheet.getDataRange().getValues();
+      const postulaciones = values.slice(1).map(row => ({
+        id: row[0],
+        fecha: row[1],
+        hora: row[2],
+        codigoUni: row[3],
+        nombres: row[4],
+        correo: row[5],
+        whatsapp: row[6],
+        carrera: row[7],
+        ciclo: row[8],
+        estado: row[9]
+      }));
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        total: postulaciones.length,
+        postulaciones
       })).setMimeType(ContentService.MimeType.JSON);
     }
 

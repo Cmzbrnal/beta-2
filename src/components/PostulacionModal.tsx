@@ -76,7 +76,8 @@ export default function PostulacionModal({ isOpen, onClose }: PostulacionModalPr
                     id: `POST-${Date.now()}`
                 });
                 localStorage.setItem('cipro_postulaciones_backup', JSON.stringify(localBackup));
-                setStatus('success');
+                setErrorMessage(error.message || 'No se pudo sincronizar la postulación con el servidor.');
+                setStatus('error');
             } catch (localErr) {
                 setStatus('error');
                 setErrorMessage('Hubo un problema al procesar el envío. Inténtalo de nuevo.');

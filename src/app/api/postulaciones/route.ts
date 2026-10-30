@@ -55,20 +55,50 @@ export async function POST(request: NextRequest) {
         fs.writeFileSync(DATA_FILE, JSON.stringify(postulaciones, null, 2), 'utf-8');
 
         // 2. Reenvío a Google Sheets (Pestaña "Postulaciones")
-        const googleWebhook = process.env.GOOGLE_SHEETS_WEBHOOK;
-        if (googleWebhook) {
-            try {
-                await fetch(googleWebhook, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sheet: 'Postulaciones',
-                        data: nuevaPostulacion
-                    })
-                });
-            } catch (webhookErr) {
-                console.error('Error al sincronizar con Google Sheets:', webhookErr);
+        const googleWebhook =
+            process.env.GOOGLE_SHEETS_WEBHOOK ||
+            process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+        if (!googleWebhook) {
+            console.error('Google Sheets no está configurado: falta GOOGLE_SHEETS_WEBHOOK');
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: 'La postulación se guardó localmente, pero Google Sheets no está configurado en Vercel.'
+                },
+                { status: 503 }
+            );
+        }
+
+        try {
+            const webhookResponse = await fetch(googleWebhook, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sheet: 'Postulaciones',
+                    data: nuevaPostulacion
+                }),
+                cache: 'no-store',
+                signal: AbortSignal.timeout(10000)
+            });
+
+            const webhookBody = await webhookResponse.json().catch(() => null);
+            if (!webhookResponse.ok || webhookBody?.success !== true) {
+                throw new Error(
+                    `Google Sheets respondió ${webhookResponse.status}: ${
+                        webhookBody?.error || webhookBody?.message || 'respuesta no válida'
+                    }`
+                );
             }
+        } catch (webhookErr) {
+            console.error('Error al sincronizar con Google Sheets:', webhookErr);
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: 'La postulación se guardó localmente, pero no pudo sincronizarse con Google Sheets.'
+                },
+                { status: 502 }
+            );
         }
 
         return NextResponse.json({

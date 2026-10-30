@@ -9,7 +9,7 @@ const projects = [
     {
         title: "Ingeniero Locaso",
         description: "Sistema automatizado de gestión académica con IA.",
-        image: "/images/proyectos/ingeniero-locaso.png",
+        image: "/imagenes/proyectos/ingeniero-locaso.png",
         contexto: "Este proyecto surgió de la necesidad de automatizar procesos académicos que consumían tiempo excesivo. La gestión manual de notas, horarios y comunicados generaba errores frecuentes y una experiencia deficiente para alumnos y docentes.",
         solucion: "Se implementó una plataforma inteligente con IA que centraliza la gestión académica, automatiza notificaciones, y ofrece dashboards en tiempo real. Se aplicó metodología Scrum con sprints de 2 semanas logrando un 70% de reducción en tiempos operativos.",
         anexos: [
@@ -20,7 +20,7 @@ const projects = [
     {
         title: "Transformación Digital",
         description: "Red de integración de datos para empresas en crecimiento.",
-        image: "/images/proyectos/transformacion-digital.png",
+        image: "/imagenes/proyectos/transformacion-digital.png",
         contexto: "Las empresas en expansión enfrentan silos de información que frenan su crecimiento. Los datos dispersos en múltiples sistemas generan decisiones lentas y costosas.",
         solucion: "Diseñamos una arquitectura de integración de datos con APIs RESTful y un ETL robusto. Se usó Kanban para gestión visual del flujo, logrando integrar 5 sistemas core en 3 meses.",
         anexos: [
@@ -31,7 +31,7 @@ const projects = [
     {
         title: "Gestión Ágil",
         description: "Visualización de flujos de trabajo con metodología Scrum.",
-        image: "/images/proyectos/gestion-agil.png",
+        image: "/imagenes/proyectos/gestion-agil.png",
         contexto: "Equipos con baja visibilidad del avance real del proyecto y dificultad para detectar cuellos de botella a tiempo, resultando en entregas tardías.",
         solucion: "Implementación de tableros Scrum físicos y digitales con métricas de velocity, burndown charts y retrospectivas estructuradas. Se logró una mejora del 45% en predictibilidad de entregas.",
         anexos: [
@@ -42,7 +42,7 @@ const projects = [
     {
         title: "PMO Estratégica",
         description: "Oficina de proyectos con enfoque en entrega de valor.",
-        image: "/images/proyectos/pmo-estrategica.png",
+        image: "/imagenes/proyectos/pmo-estrategica.png",
         contexto: "Organización con múltiples proyectos sin un ente centralizador, causando duplicación de esfuerzos, falta de estándares y baja alineación estratégica.",
         solucion: "Constitución de una PMO con governance model, marcos de referencia estandarizados y KPIs de portafolio. Alineación de proyectos a objetivos estratégicos con OKRs trimestrales.",
         anexos: [
@@ -53,7 +53,7 @@ const projects = [
     {
         title: "Optimización de Procesos",
         description: "Eficiencia y productividad a través de mejora continua.",
-        image: "/images/proyectos/optimizacion-procesos.png",
+        image: "/imagenes/proyectos/optimizacion-procesos.png",
         contexto: "Procesos operativos con alta tasa de reprocesos y tiempos de ciclo elevados. Falta de estandarización y métricas claras de eficiencia.",
         solucion: "Aplicación de Lean Six Sigma para identificar desperdicios y rediseñar flujos críticos. Automatización de pasos manuales y capacitación del equipo en mejora continua, logrando 30% de reducción en tiempo de ciclo.",
         anexos: [

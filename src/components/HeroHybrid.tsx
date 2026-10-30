@@ -6,7 +6,7 @@ import { Button as MovingBorderButton } from '@/components/ui/moving-border';
 
 const TOTAL_FRAMES = 141;
 const FPS = 30;
-const BASE_URL = '/sequence/loop_cipro/';
+const BASE_URL = 'https://raw.githubusercontent.com/20233999-collab/web-cipro/92750cf119c39e5f44d034664fa0a6cb199e901a/public/sequence/loop_cipro/';
 
 interface HeroHybridProps {
     onOpenModal?: () => void;

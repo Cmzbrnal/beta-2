@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  background: #020202;
+  color: #ffffff;
+}
+
+/* ========================================
+   Premium Container - Centered Layout
+   ======================================== */
+
+@layer components {
+  .container {
+    @apply mx-auto px-8 md:px-16 lg:px-20;
+    max-width: 1000px;
+  }
+
+  .container-wide {
+    @apply mx-auto px-6 md:px-12;
+    max-width: 1200px;
+  }
+}
+
+/* ========================================
+   Premium Custom Scrollbar
+   ======================================== */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a #0a0a0a;
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 10px;
+  border: 2px solid #0a0a0a;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+  border: 2px solid #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #4a4a4a;
+}
+
+/* Corner (where horizontal and vertical scrollbars meet) */
+::-webkit-scrollbar-corner {
+  background: #0a0a0a;
+}

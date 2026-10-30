@@ -1,0 +1,22 @@
+[
+  {
+    "codigoUni": "20233999A",
+    "password": "cipro",
+    "nombres": "Miembro Directiva CIPRO",
+    "correo": "miembro@uni.pe",
+    "celular": "987654321",
+    "carrera": "Ingeniería Industrial",
+    "ciclo": "7mo Ciclo",
+    "estado": "Miembro"
+  },
+  {
+    "codigoUni": "20241001B",
+    "password": "cipro",
+    "nombres": "Estudiante Investigador",
+    "correo": "investigador@uni.pe",
+    "celular": "912345678",
+    "carrera": "Ingeniería de Sistemas",
+    "ciclo": "5to Ciclo",
+    "estado": "Miembro"
+  }
+]

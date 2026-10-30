@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FileText,
@@ -174,6 +174,77 @@ function PMOModal({
     member?: any;
     onClose: () => void;
 }) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [files, setFiles] = useState<{ id: string; name: string; url: string; mimeType: string }[]>([]);
+    const [uploading, setUploading] = useState(false);
+    const [fileMessage, setFileMessage] = useState('');
+
+    useEffect(() => {
+        if (!member?.codigoUni) return;
+        fetch(`/api/member-content?sheet=Archivos&memberCode=${encodeURIComponent(member.codigoUni)}&project=${encodeURIComponent(data.title)}`)
+            .then((response) => response.json())
+            .then((result) => {
+                if (result.success) setFiles(result.files || []);
+            })
+            .catch(() => setFileMessage('No se pudieron cargar los archivos.'));
+    }, [data.title, member?.codigoUni]);
+
+    const uploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file || !member?.codigoUni) return;
+        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+        if (!allowed.includes(file.type)) {
+            setFileMessage('Solo se permiten PDF, PNG, JPG, WEBP o GIF.');
+            return;
+        }
+        if (file.size > 4 * 1024 * 1024) {
+            setFileMessage('El archivo no puede superar 4 MB.');
+            return;
+        }
+
+        setUploading(true);
+        setFileMessage('');
+        try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+                reader.readAsDataURL(file);
+            });
+            const response = await fetch('/api/member-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'uploadFile',
+                    memberCode: member.codigoUni,
+                    project: data.title,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    base64
+                })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message);
+            setFiles((current) => [...current, result.file]);
+            setFileMessage('Archivo subido.');
+        } catch (error) {
+            setFileMessage(error instanceof Error ? error.message : 'No se pudo subir el archivo.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const deleteFile = async (fileId: string) => {
+        const response = await fetch('/api/member-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'deleteFile', memberCode: member.codigoUni, fileId })
+        });
+        const result = await response.json();
+        if (response.ok && result.success) setFiles((current) => current.filter((file) => file.id !== fileId));
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -244,15 +315,23 @@ function PMOModal({
                                 </div>
                             ))}
                         </div>
+                        {files.map((file) => (
+                            <div key={file.id} className="mt-2 flex items-center justify-between gap-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+                                <a href={file.url} target="_blank" rel="noreferrer" className="text-sm text-emerald-300 hover:underline truncate">{file.name}</a>
+                                {member && <button onClick={() => deleteFile(file.id)} className="text-xs text-red-400 hover:text-red-300">Borrar</button>}
+                            </div>
+                        ))}
                     </div>
 
                     {/* Upload section — visible only for members */}
                     {member && (
                         <div className="pt-4 border-t border-white/5">
-                            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all">
+                            <input ref={fileInputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadFile} className="hidden" />
+                            <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all disabled:opacity-50">
                                 <Upload className="w-4 h-4" />
-                                Subir nuevo documento
+                                {uploading ? 'Subiendo...' : 'Subir PDF o imagen'}
                             </button>
+                            {fileMessage && <p className="mt-2 text-xs text-gray-400">{fileMessage}</p>}
                         </div>
                     )}
                 </div>

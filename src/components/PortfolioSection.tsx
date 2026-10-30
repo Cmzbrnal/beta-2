@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ChevronLeft, ChevronRight, X, Upload, FileText } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, X, Upload, FileText, Save, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const projects = [
@@ -77,6 +77,123 @@ function ProjectModal({
     member?: any;
     onClose: () => void;
 }) {
+    const [notes, setNotes] = useState({ contexto: '', solucion: '' });
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [files, setFiles] = useState<{ id: string; name: string; url: string }[]>([]);
+    const [uploading, setUploading] = useState(false);
+
+    useEffect(() => {
+        if (!member?.codigoUni) return;
+        fetch(`/api/member-content?sheet=Contenido&memberCode=${encodeURIComponent(member.codigoUni)}&project=${encodeURIComponent(project.title)}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success && data.content) setNotes(data.content);
+            })
+            .catch(() => setMessage('No se pudieron cargar tus notas.'));
+    }, [member?.codigoUni, project.title]);
+
+    useEffect(() => {
+        if (!member?.codigoUni) return;
+        fetch(`/api/member-content?sheet=Archivos&memberCode=${encodeURIComponent(member.codigoUni)}&project=${encodeURIComponent(project.title)}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) setFiles(data.files || []);
+            })
+            .catch(() => setMessage('No se pudieron cargar los archivos.'));
+    }, [member?.codigoUni, project.title]);
+
+    const uploadProjectFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file || !member?.codigoUni) return;
+        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+        if (!allowed.includes(file.type) || file.size > 4 * 1024 * 1024) {
+            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 4 MB.');
+            return;
+        }
+        setUploading(true);
+        try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+                reader.readAsDataURL(file);
+            });
+            const response = await fetch('/api/member-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'uploadFile',
+                    memberCode: member.codigoUni,
+                    project: project.title,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    base64
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            setFiles((current) => [...current, data.file]);
+            setMessage('Archivo subido.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudo subir el archivo.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const deleteProjectFile = async (fileId: string) => {
+        const response = await fetch('/api/member-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'deleteFile', memberCode: member.codigoUni, fileId })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) setFiles((current) => current.filter((file) => file.id !== fileId));
+    };
+
+    const saveNotes = async () => {
+        if (!member?.codigoUni) return;
+        setSaving(true);
+        setMessage('');
+        try {
+            const response = await fetch('/api/member-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'saveContent',
+                    memberCode: member.codigoUni,
+                    project: project.title,
+                    content: notes
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            setMessage('Notas guardadas.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudieron guardar las notas.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const clearNotes = async () => {
+        setNotes({ contexto: '', solucion: '' });
+        if (!member?.codigoUni) return;
+        await fetch('/api/member-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'deleteContent',
+                memberCode: member.codigoUni,
+                project: project.title
+            })
+        });
+        setMessage('Notas eliminadas.');
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -126,6 +243,8 @@ function ProjectModal({
                         <p className="text-gray-300 text-sm leading-relaxed">{project.contexto}</p>
                         {member && (
                             <textarea
+                                value={notes.contexto}
+                                onChange={(event) => setNotes((current) => ({ ...current, contexto: event.target.value }))}
                                 className="mt-3 w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-electric-orange/40 transition-colors"
                                 rows={2}
                                 placeholder="Añadir notas sobre el contexto..."
@@ -141,6 +260,8 @@ function ProjectModal({
                         <p className="text-gray-300 text-sm leading-relaxed">{project.solucion}</p>
                         {member && (
                             <textarea
+                                value={notes.solucion}
+                                onChange={(event) => setNotes((current) => ({ ...current, solucion: event.target.value }))}
                                 className="mt-3 w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-electric-orange/40 transition-colors"
                                 rows={2}
                                 placeholder="Añadir notas sobre la solución..."
@@ -176,11 +297,29 @@ function ProjectModal({
                             ))}
                         </div>
                         {member && (
-                            <button className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all">
-                                <Upload className="w-4 h-4" />
-                                Subir PDF
-                            </button>
+                            <div className="mt-3 flex items-center gap-2 flex-wrap">
+                                <input ref={fileInputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadProjectFile} className="hidden" />
+                                <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-sm font-medium hover:bg-blue-500/20 transition-all disabled:opacity-50">
+                                    <Upload className="w-4 h-4" />
+                                    {uploading ? 'Subiendo...' : 'Subir archivo'}
+                                </button>
+                                <button onClick={saveNotes} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all disabled:opacity-50">
+                                    <Save className="w-4 h-4" />
+                                    {saving ? 'Guardando...' : 'Guardar notas'}
+                                </button>
+                                <button onClick={clearNotes} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all">
+                                    <Trash2 className="w-4 h-4" />
+                                    Borrar notas
+                                </button>
+                                {message && <span className="text-xs text-gray-400">{message}</span>}
+                            </div>
                         )}
+                        {files.map((file) => (
+                            <div key={file.id} className="mt-2 flex items-center justify-between gap-3 p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
+                                <a href={file.url} target="_blank" rel="noreferrer" className="text-sm text-blue-300 hover:underline truncate">{file.name}</a>
+                                {member && <button onClick={() => deleteProjectFile(file.id)} className="text-xs text-red-400 hover:text-red-300">Borrar</button>}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </motion.div>

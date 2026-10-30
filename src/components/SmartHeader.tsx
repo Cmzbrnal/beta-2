@@ -19,7 +19,7 @@ interface SmartHeaderProps {
 const navLinks = [
     { label: 'PMO Knowledge', href: '#repositorio' },
     { label: 'Proyectos', href: '#portafolio' },
-    { label: 'Capacitaciones', href: '#nosotros' },
+    { label: 'Capacitaciones', href: '#capacitaciones' },
 ];
 
 export default function SmartHeader({ onOpenLogin, member }: SmartHeaderProps) {

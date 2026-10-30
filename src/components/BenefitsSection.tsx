@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, BookOpen, Users, X, Plus, Pencil } from 'lucide-react';
+import { Calendar, BookOpen, Users, X, Plus, Pencil, Download, FileText } from 'lucide-react';
 import BenefitCard from '@/components/ui/benefit-card';
 
 // ─── Datos base de las tarjetas ───────────────────────────────────────────────
@@ -23,7 +23,7 @@ const benefits = [
         description: "Biblioteca curada de plantillas, guías y herramientas de gestión.",
         imageSrc: "/images/cards/recursos_premium.svg",
         imageAlt: "Recursos y materiales de aprendizaje",
-        hasModal: false, // calls onAccessRestrictedResource instead
+        hasModal: true,
     },
     {
         id: 'capacitaciones',
@@ -111,15 +111,57 @@ function EventosModal({ member, onClose }: { member?: any; onClose: () => void }
             </div>
 
             {member && (
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-orange/10 border border-electric-orange/30 text-electric-orange text-sm font-medium hover:bg-electric-orange/20 transition-all">
-                    <Plus className="w-4 h-4" />
-                    Agregar evento
-                </button>
+                <div className="flex flex-wrap gap-2">
+                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-orange/10 border border-electric-orange/30 text-electric-orange text-sm font-medium hover:bg-electric-orange/20 transition-all">
+                        <Plus className="w-4 h-4" />
+                        Agregar evento
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/10 transition-all">
+                        <Pencil className="w-4 h-4" />
+                        Editar evento
+                    </button>
+                </div>
             )}
 
             <p className="text-[11px] text-gray-600 text-center mt-4">
                 📌 Información actualizada por la directiva de CIPRO. Los detalles pueden cambiar.
             </p>
+        </ModalWrapper>
+    );
+}
+
+function RecursosModal({ member, onClose }: { member?: any; onClose: () => void }) {
+    const recursos = [
+        { nombre: 'Plantilla Charter de Proyecto', ext: 'PDF' },
+        { nombre: 'Matriz de Riesgos', ext: 'XLSX' },
+        { nombre: 'Checklist de Cierre', ext: 'PDF' },
+    ];
+
+    return (
+        <ModalWrapper onClose={onClose}>
+            <ModalHeader title="Recursos Premium" subtitle="Plantillas y documentos listos para uso inmediato" onClose={onClose} />
+            <div className="space-y-2">
+                {recursos.map((recurso, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02]">
+                        <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-gray-500" />
+                            <span className="text-white/80 text-sm">{recurso.nombre}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-400">{recurso.ext}</span>
+                        </div>
+                        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition-all">
+                            <Download className="w-3 h-3" />
+                            Descargar
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            {member && (
+                <button className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all">
+                    <Plus className="w-4 h-4" />
+                    Subir PDF
+                </button>
+            )}
         </ModalWrapper>
     );
 }
@@ -317,15 +359,11 @@ export default function BenefitsSection({ member, onAccessRestrictedResource }: 
     const [openModal, setOpenModal] = useState<string | null>(null);
 
     const handleCardClick = (id: string) => {
-        if (id === 'recursos') {
-            if (onAccessRestrictedResource) onAccessRestrictedResource('Recursos Premium');
-            return;
-        }
         setOpenModal(prev => (prev === id ? null : id));
     };
 
     return (
-        <section id="nosotros" className="py-20 md:py-32 bg-void-black relative overflow-hidden">
+        <section id="capacitaciones" className="py-20 md:py-32 bg-void-black relative overflow-hidden">
             {/* Background Gradient */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl pointer-events-none">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-electric-orange/5 rounded-full blur-[128px]" />
@@ -370,6 +408,9 @@ export default function BenefitsSection({ member, onAccessRestrictedResource }: 
             <AnimatePresence>
                 {openModal === 'eventos' && (
                     <EventosModal key="eventos" member={member} onClose={() => setOpenModal(null)} />
+                )}
+                {openModal === 'recursos' && (
+                    <RecursosModal key="recursos" member={member} onClose={() => setOpenModal(null)} />
                 )}
                 {openModal === 'capacitaciones' && (
                     <CapacitacionesModal key="capacitaciones" member={member} onClose={() => setOpenModal(null)} />

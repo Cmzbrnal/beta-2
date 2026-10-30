@@ -1,65 +1,69 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ChevronLeft, ChevronRight, X, Upload, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, X, Upload, Plus, FileText } from 'lucide-react';
 
 const projects = [
     {
-        title: "Ingeniero Locaso",
-        description: "Sistema automatizado de gestión académica con IA.",
-        image: "/images/proyectos/ingeniero-locaso.svg",
-        contexto: "Este proyecto surgió de la necesidad de automatizar procesos académicos que consumían tiempo excesivo. La gestión manual de notas, horarios y comunicados generaba errores frecuentes y una experiencia deficiente para alumnos y docentes.",
-        solucion: "Se implementó una plataforma inteligente con IA que centraliza la gestión académica, automatiza notificaciones, y ofrece dashboards en tiempo real. Se aplicó metodología Scrum con sprints de 2 semanas logrando un 70% de reducción en tiempos operativos.",
-        anexos: [
-            { name: "Charter del Proyecto", ext: "PDF" },
-            { name: "Informe Final", ext: "PDF" },
+        title: 'Ingeniero Locaso',
+        description: 'Sistema automatizado de gestión académica con IA.',
+        images: [
+            '/images/proyectos/ingeniero-locaso.svg',
+            '/images/cards/capacitaciones.svg',
+            '/images/cards/eventos_exclusivos.svg',
         ],
+        causas: 'Procesos manuales, reprocesos frecuentes y baja trazabilidad de información académica.',
+        soluciones: 'Automatización de flujos, tableros de seguimiento y mejoras progresivas por iteraciones.',
+        anexos: ['Charter del Proyecto', 'Informe Final', 'Lecciones Aprendidas'],
     },
     {
-        title: "Transformación Digital",
-        description: "Red de integración de datos para empresas en crecimiento.",
-        image: "/images/proyectos/transformacion-digital.svg",
-        contexto: "Las empresas en expansión enfrentan silos de información que frenan su crecimiento. Los datos dispersos en múltiples sistemas generan decisiones lentas y costosas.",
-        solucion: "Diseñamos una arquitectura de integración de datos con APIs RESTful y un ETL robusto. Se usó Kanban para gestión visual del flujo, logrando integrar 5 sistemas core en 3 meses.",
-        anexos: [
-            { name: "Arquitectura de Solución", ext: "PDF" },
-            { name: "Plan de Implementación", ext: "XLSX" },
+        title: 'Transformación Digital',
+        description: 'Red de integración de datos para empresas en crecimiento.',
+        images: [
+            '/images/proyectos/transformacion-digital.svg',
+            '/images/cards/recursos_premium.svg',
+            '/images/cards/capacitaciones.svg',
         ],
+        causas: 'Silos de información y decisiones lentas por datos dispersos en múltiples plataformas.',
+        soluciones: 'Arquitectura de integración por APIs, sincronización y tableros de control ejecutivos.',
+        anexos: ['Arquitectura de Solución', 'Plan de Implementación', 'Roadmap de Integración'],
     },
     {
-        title: "Gestión Ágil",
-        description: "Visualización de flujos de trabajo con metodología Scrum.",
-        image: "/images/proyectos/gestion-agil.svg",
-        contexto: "Equipos con baja visibilidad del avance real del proyecto y dificultad para detectar cuellos de botella a tiempo, resultando en entregas tardías.",
-        solucion: "Implementación de tableros Scrum físicos y digitales con métricas de velocity, burndown charts y retrospectivas estructuradas. Se logró una mejora del 45% en predictibilidad de entregas.",
-        anexos: [
-            { name: "Guía de Implementación Scrum", ext: "PDF" },
-            { name: "Tablero Kanban Template", ext: "XLSX" },
+        title: 'Gestión Ágil',
+        description: 'Visualización de flujos de trabajo con metodología Scrum.',
+        images: [
+            '/images/proyectos/gestion-agil.svg',
+            '/images/cards/eventos_exclusivos.svg',
+            '/images/cards/recursos_premium.svg',
         ],
+        causas: 'Baja visibilidad del avance real y poca detección temprana de cuellos de botella.',
+        soluciones: 'Tableros ágiles, métricas de sprint y rituales para mejora continua de entregables.',
+        anexos: ['Guía de Implementación Scrum', 'Tablero Kanban', 'Reporte de Velocity'],
     },
     {
-        title: "PMO Estratégica",
-        description: "Oficina de proyectos con enfoque en entrega de valor.",
-        image: "/images/proyectos/pmo-estrategica.svg",
-        contexto: "Organización con múltiples proyectos sin un ente centralizador, causando duplicación de esfuerzos, falta de estándares y baja alineación estratégica.",
-        solucion: "Constitución de una PMO con governance model, marcos de referencia estandarizados y KPIs de portafolio. Alineación de proyectos a objetivos estratégicos con OKRs trimestrales.",
-        anexos: [
-            { name: "PMO Charter", ext: "PDF" },
-            { name: "Governance Model", ext: "PDF" },
+        title: 'PMO Estratégica',
+        description: 'Oficina de proyectos con enfoque en entrega de valor.',
+        images: [
+            '/images/proyectos/pmo-estrategica.svg',
+            '/images/cards/recursos_premium.svg',
+            '/images/cards/eventos_exclusivos.svg',
         ],
+        causas: 'Ausencia de estándares, duplicación de esfuerzos y baja alineación con objetivos estratégicos.',
+        soluciones: 'Diseño de governance model, KPIs de portafolio y lineamientos de priorización.',
+        anexos: ['PMO Charter', 'Governance Model', 'Matriz de Responsabilidades'],
     },
     {
-        title: "Optimización de Procesos",
-        description: "Eficiencia y productividad a través de mejora continua.",
-        image: "/images/proyectos/optimizacion-procesos.svg",
-        contexto: "Procesos operativos con alta tasa de reprocesos y tiempos de ciclo elevados. Falta de estandarización y métricas claras de eficiencia.",
-        solucion: "Aplicación de Lean Six Sigma para identificar desperdicios y rediseñar flujos críticos. Automatización de pasos manuales y capacitación del equipo en mejora continua, logrando 30% de reducción en tiempo de ciclo.",
-        anexos: [
-            { name: "Mapa de Procesos AS-IS / TO-BE", ext: "PDF" },
-            { name: "Plan de Mejora", ext: "XLSX" },
+        title: 'Optimización de Procesos',
+        description: 'Eficiencia y productividad a través de mejora continua.',
+        images: [
+            '/images/proyectos/optimizacion-procesos.svg',
+            '/images/cards/capacitaciones.svg',
+            '/images/cards/recursos_premium.svg',
         ],
+        causas: 'Procesos con alta variabilidad, retrabajos y tiempos de ciclo extendidos.',
+        soluciones: 'Mapeo AS-IS/TO-BE, automatización parcial y seguimiento de indicadores operativos.',
+        anexos: ['Mapa de Procesos', 'Plan de Mejora', 'Indicadores de Eficiencia'],
     },
 ];
 
@@ -67,7 +71,6 @@ interface PortfolioSectionProps {
     member?: any;
 }
 
-// ─── Project Modal ────────────────────────────────────────────────────────────
 function ProjectModal({
     project,
     member,
@@ -77,6 +80,18 @@ function ProjectModal({
     member?: any;
     onClose: () => void;
 }) {
+    const [imageIndex, setImageIndex] = useState(0);
+
+    const nextImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setImageIndex((prev) => (prev + 1) % project.images.length);
+    };
+
+    const prevImage = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setImageIndex((prev) => (prev - 1 + project.images.length) % project.images.length);
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -90,24 +105,20 @@ function ProjectModal({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="relative w-full max-w-3xl bg-[#0B0F17] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
+                className="relative w-full max-w-5xl bg-[#0B0F17] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Orange top line */}
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-orange to-transparent z-10" />
 
-                {/* Project image header */}
-                <div className="relative h-48 flex-shrink-0 overflow-hidden">
-                    <img
-                        src={project.image}
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                    />
+                <div className="relative h-56 md:h-72 flex-shrink-0 overflow-hidden">
+                    <img src={project.images[imageIndex]} alt={project.title} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F17] via-[#0B0F17]/40 to-transparent" />
-                    <div className="absolute bottom-4 left-6 right-14">
-                        <h3 className="text-2xl font-bold text-white">{project.title}</h3>
-                        <p className="text-gray-300 text-sm mt-1">{project.description}</p>
-                    </div>
+                    <button onClick={prevImage} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center">
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button onClick={nextImage} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center">
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/50 border border-white/20 flex items-center justify-center text-gray-300 hover:text-white hover:bg-black/70 transition-all"
@@ -116,61 +127,42 @@ function ProjectModal({
                     </button>
                 </div>
 
-                {/* Scrollable content */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Bloque 1: Contexto / Problemática */}
-                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-                        <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">
-                            Contexto / Problemática
-                        </h4>
-                        <p className="text-gray-300 text-sm leading-relaxed">{project.contexto}</p>
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-2xl font-bold text-white">{project.title}</h3>
+                            <p className="text-gray-300 text-sm mt-1">{project.description}</p>
+                        </div>
                         {member && (
-                            <textarea
-                                className="mt-3 w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-electric-orange/40 transition-colors"
-                                rows={2}
-                                placeholder="Añadir notas sobre el contexto..."
-                            />
+                            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 hover:bg-white/10 transition-all text-sm">
+                                <Plus className="w-4 h-4" />
+                                Editar proyecto
+                            </button>
                         )}
                     </div>
 
-                    {/* Bloque 2: Solución desarrollada */}
                     <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-                        <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">
-                            Solución desarrollada
-                        </h4>
-                        <p className="text-gray-300 text-sm leading-relaxed">{project.solucion}</p>
-                        {member && (
-                            <textarea
-                                className="mt-3 w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-electric-orange/40 transition-colors"
-                                rows={2}
-                                placeholder="Añadir notas sobre la solución..."
-                            />
-                        )}
+                        <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">Causas</h4>
+                        <p className="text-gray-300 text-sm leading-relaxed">{project.causas}</p>
                     </div>
 
-                    {/* Bloque 3: Anexos y PDFs */}
                     <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-                        <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">
-                            Anexos y PDFs
-                        </h4>
+                        <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">Soluciones</h4>
+                        <p className="text-gray-300 text-sm leading-relaxed">{project.soluciones}</p>
+                    </div>
+
+                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
+                        <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">Anexos</h4>
                         <div className="space-y-2">
                             {project.anexos.map((anexo, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02]"
-                                >
+                                <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02]">
                                     <div className="flex items-center gap-2">
                                         <FileText className="w-4 h-4 text-gray-500" />
-                                        <span className="text-sm text-white/80">{anexo.name}</span>
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-400">
-                                            {anexo.ext}
-                                        </span>
+                                        <span className="text-sm text-white/80">{anexo}</span>
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-400">PDF</span>
                                     </div>
-                                    <button
-                                        disabled
-                                        className="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed"
-                                    >
-                                        Próximamente
+                                    <button className="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 hover:text-white transition-all">
+                                        Descargar
                                     </button>
                                 </div>
                             ))}
@@ -188,217 +180,89 @@ function ProjectModal({
     );
 }
 
-// ─── Main Section ─────────────────────────────────────────────────────────────
 export default function PortfolioSection({ member }: PortfolioSectionProps) {
-    const [centerIndex, setCenterIndex] = useState(0);
-    const [isMobile, setIsMobile] = useState(false);
     const [selectedProject, setSelectedProject] = useState<number | null>(null);
-    const totalProjects = projects.length;
+    const [cardImageIndex, setCardImageIndex] = useState<Record<number, number>>({});
 
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    // Get index with wrapping
-    const getWrappedIndex = (index: number) => {
-        return ((index % totalProjects) + totalProjects) % totalProjects;
-    };
-
-    // Navigate to previous
-    const prevSlide = () => {
-        setCenterIndex(getWrappedIndex(centerIndex - 1));
-    };
-
-    // Navigate to next
-    const nextSlide = () => {
-        setCenterIndex(getWrappedIndex(centerIndex + 1));
-    };
-
-    // Click on card: center it; if already center, open modal
-    const goToSlide = (index: number) => {
-        if (index === centerIndex) {
-            setSelectedProject(index);
-        } else {
-            setCenterIndex(index);
-        }
-    };
-
-    // Get visible cards (5 cards: -2, -1, center, +1, +2)
-    const getVisibleCards = () => {
-        const positions = [-2, -1, 0, 1, 2];
-        return positions.map(offset => {
-            const actualIndex = getWrappedIndex(centerIndex + offset);
-            return {
-                project: projects[actualIndex],
-                actualIndex,
-                offset,
-            };
+    const shiftCardImage = (projectIndex: number, direction: 1 | -1, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setCardImageIndex((prev) => {
+            const current = prev[projectIndex] ?? 0;
+            const total = projects[projectIndex].images.length;
+            const next = (current + direction + total) % total;
+            return { ...prev, [projectIndex]: next };
         });
     };
 
-    const visibleCards = getVisibleCards();
-
     return (
-        <section id="portafolio" className="py-8 md:py-32 bg-void-black relative overflow-hidden">
-            {/* Background glow */}
+        <section id="portafolio" className="py-12 md:py-24 bg-void-black relative overflow-hidden">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[800px] h-[300px] md:h-[400px] bg-white/5 rounded-full blur-[100px] md:blur-[150px] pointer-events-none" />
 
-            <div className="container">
-                {/* Header */}
+            <div className="container relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="text-center mb-4 md:mb-20"
+                    className="text-center mb-10 md:mb-16"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">
-                        Proyectos con Propósito.
-                    </h2>
-                    <p className="text-gray-400 max-w-2xl mx-auto text-lg px-4">
-                        Es el centro del círculo. Casos de éxito donde transformamos la gestión en resultados tangibles.
-                    </p>
+                    <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Proyectos con Propósito.</h2>
+                    <p className="text-gray-400 max-w-2xl mx-auto text-lg px-4">Casos reales donde convertimos gestión en resultados medibles.</p>
                 </motion.div>
 
-                {/* Carousel Container */}
-                <div className="relative flex items-center justify-center h-[560px] md:h-[620px]">
-
-                    {/* Left Arrow */}
-                    <button
-                        onClick={prevSlide}
-                        className="absolute left-2 md:left-8 top-[44%] md:top-[42%] -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
-                    >
-                        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                    </button>
-
-                    {/* Cards */}
-                    <div className="relative flex items-center justify-center w-full h-full perspective-1000">
-                        <AnimatePresence mode="popLayout">
-                            {visibleCards.map(({ project, actualIndex, offset }) => {
-                                // On mobile, hide cards with offset > 1
-                                if (isMobile && Math.abs(offset) > 1) return null;
-
-                                const isCenter = offset === 0;
-                                const rotation = offset * 8;
-                                // Wider spread so side cards are clearly visible
-                                const xOffset = isMobile ? offset * 90 : offset * 145;
-                                const translateX = `calc(-50% + ${xOffset}px)`;
-                                const scale = isCenter ? 1 : (isMobile ? 0.7 : 0.72) - Math.abs(offset) * 0.04;
-                                const opacity = isCenter ? 1 : Math.abs(offset) === 1 ? 0.55 : 0.25;
-                                const zIndex = 10 - Math.abs(offset);
-
-                                return (
-                                    <motion.div
-                                        key={actualIndex}
-                                        initial={{ opacity: 0, scale: 0.8, x: "calc(-50% + 0px)" }}
-                                        animate={{
-                                            opacity,
-                                            scale,
-                                            x: translateX,
-                                            rotate: rotation,
-                                            zIndex,
-                                        }}
-                                        exit={{ opacity: 0, scale: 0.8, x: "calc(-50% + 0px)" }}
-                                        transition={{ duration: 0.5, ease: "easeOut" }}
-                                        onClick={() => goToSlide(actualIndex)}
-                                        className="absolute cursor-pointer left-1/2 top-[44%] md:top-[42%] -translate-y-1/2 flex flex-col items-center"
-                                        style={{ zIndex }}
-                                    >
-                                        {/* Card */}
-                                        <motion.div
-                                            whileHover={isCenter ? { scale: 1.05, boxShadow: "0 0 80px rgba(255,255,255,0.5)" } : {}}
-                                            className={cn(
-                                                "w-[180px] h-[250px] sm:w-[200px] sm:h-[280px] md:w-[320px] md:h-[400px] rounded-3xl overflow-hidden bg-void-black",
-                                                "border-2 transition-all duration-300 relative",
-                                                isCenter
-                                                    ? "border-white/40 shadow-[0_0_60px_rgba(255,255,255,0.35)]"
-                                                    : "border-white/10 hover:border-white/30 hover:shadow-[0_0_40px_rgba(255,255,255,0.2)]"
-                                            )}
-                                        >
-                                            {/* Image */}
-                                            <img
-                                                src={project.image}
-                                                alt={project.title}
-                                                className="w-full h-full object-cover"
-                                            />
-
-                                            {/* Center card hint overlay */}
-                                            {isCenter && (
-                                                <div className="absolute inset-0 flex items-end justify-center pb-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
-                                                    <span className="text-xs font-medium text-white/80 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
-                                                        Click para ver detalles
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </motion.div>
-
-                                        {/* Text below card - only visible for center */}
-                                        {/* We use absolute positioning to avoid affecting the vertical center of the card */}
-                                        <motion.div
-                                            className="absolute top-[calc(100%+1.5rem)] text-center w-[280px] md:w-[400px]"
-                                            animate={{
-                                                opacity: isCenter ? 1 : 0,
-                                                y: isCenter ? 0 : 10,
-                                                pointerEvents: isCenter ? "auto" : "none"
-                                            }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
-                                                {project.title}
-                                            </h3>
-                                            <p className="text-gray-300 text-sm md:text-base mb-4 line-clamp-2 px-4">
-                                                {project.description}
-                                            </p>
-
-                                            {/* "ir" link → now opens modal */}
-                                            <motion.div
-                                                onClick={(e) => { e.stopPropagation(); setSelectedProject(centerIndex); }}
-                                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/70 hover:text-white transition-all duration-300 cursor-pointer group rounded-full hover:bg-white/10 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]"
-                                                whileHover={{ scale: 1.05 }}
-                                            >
-                                                <span>ver proyecto</span>
-                                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                            </motion.div>
-                                        </motion.div>
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
+                {member && (
+                    <div className="mb-6 flex justify-end">
+                        <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-orange/10 border border-electric-orange/30 text-electric-orange text-sm font-medium hover:bg-electric-orange/20 transition-all">
+                            <Plus className="w-4 h-4" />
+                            Agregar nuevo proyecto
+                        </button>
                     </div>
+                )}
 
-                    {/* Right Arrow */}
-                    <button
-                        onClick={nextSlide}
-                        className="absolute right-2 md:right-8 top-[44%] md:top-1/2 -translate-y-1/2 z-20 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
-                    >
-                        <ChevronRight className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                    </button>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {projects.map((project, index) => {
+                        const activeImage = cardImageIndex[index] ?? 0;
 
-                {/* Dots indicator */}
-                <div className="flex justify-center gap-2 mt-10">
-                    {projects.map((_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => goToSlide(index)}
-                            className={cn(
-                                "w-2 h-2 rounded-full transition-all duration-300",
-                                index === centerIndex
-                                    ? "bg-white w-6"
-                                    : "bg-white/30 hover:bg-white/50"
-                            )}
-                        />
-                    ))}
+                        return (
+                            <motion.article
+                                key={project.title}
+                                initial={{ opacity: 0, y: 18 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                whileHover={{ y: -4 }}
+                                onClick={() => setSelectedProject(index)}
+                                className="rounded-2xl overflow-hidden border border-white/10 bg-white/[0.02] cursor-pointer hover:border-electric-orange/40 transition-all"
+                            >
+                                <div className="relative h-52 overflow-hidden">
+                                    <img src={project.images[activeImage]} alt={project.title} className="w-full h-full object-cover" />
+                                    <button
+                                        onClick={(e) => shiftCardImage(index, -1, e)}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center"
+                                        aria-label={`Imagen anterior de ${project.title}`}
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => shiftCardImage(index, 1, e)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 border border-white/20 text-white flex items-center justify-center"
+                                        aria-label={`Imagen siguiente de ${project.title}`}
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="p-4">
+                                    <h3 className="text-lg font-semibold text-white">{project.title}</h3>
+                                    <p className="text-sm text-gray-400 mt-1 line-clamp-2">{project.description}</p>
+                                </div>
+                            </motion.article>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Project Modal */}
             <AnimatePresence>
                 {selectedProject !== null && (
                     <ProjectModal
-                        key={selectedProject}
+                        key={projects[selectedProject].title}
                         project={projects[selectedProject]}
                         member={member}
                         onClose={() => setSelectedProject(null)}

@@ -22,6 +22,7 @@ interface MemberData {
 }
 
 export default function Home() {
+    const SIMULATED_MEMBER_MODE = false;
     const [isPostulacionOpen, setIsPostulacionOpen] = useState(false);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [currentMember, setCurrentMember] = useState<MemberData | null>(null);
@@ -71,12 +72,23 @@ export default function Home() {
         setIsLoginOpen(true);
     };
 
+    const isMember = SIMULATED_MEMBER_MODE || Boolean(currentMember);
+    const memberContext = isMember
+        ? (currentMember ?? {
+            codigoUni: 'DEMO-001',
+            nombres: 'Miembro Demo',
+            carrera: 'Gestión de Proyectos',
+            ciclo: 'N/A',
+            estado: 'ACTIVO',
+        })
+        : null;
+
     return (
         <main className="min-h-screen bg-void-black selection:bg-electric-orange selection:text-white">
             {/* Header con botón Login Miembros arriba a la derecha */}
             <SmartHeader
                 onOpenLogin={handleOpenRegularLogin}
-                member={currentMember}
+                member={memberContext}
             />
 
             {/* 1. Hero Section con botón ÚNETE AHORA (Captura 1) */}
@@ -92,11 +104,11 @@ export default function Home() {
                 </div>
 
                 {/* 3. Proyectos con Propósito: Carrusel 3D interactivo */}
-                <PortfolioSection member={currentMember} />
+                <PortfolioSection member={memberContext} />
 
                 {/* 4. Más que una comunidad: Eventos, Recursos, Capacitaciones */}
                 <BenefitsSection
-                    member={currentMember}
+                    member={memberContext}
                     onAccessRestrictedResource={handleAccessRestrictedResource}
                 />
 
@@ -105,7 +117,7 @@ export default function Home() {
 
                 {/* 5. PMO Knowledge con Bento Grid interactivo (Captura 3) */}
                 <PMOKnowledgeSection
-                    member={currentMember}
+                    member={memberContext}
                     onAccessRestrictedResource={handleAccessRestrictedResource}
                 />
 

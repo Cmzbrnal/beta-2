@@ -13,7 +13,6 @@ import {
     X,
     Download,
     Upload,
-    Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -40,7 +39,8 @@ function BentoItem({
     onClick
 }: BentoItemProps) {
     return (
-        <motion.div
+        <motion.button
+            type="button"
             whileHover={{ scale: 1.02, y: -4 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             onClick={onClick}
@@ -85,7 +85,7 @@ function BentoItem({
                     className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 >
                     <ArrowRight className="w-5 h-5 text-electric-orange" />
-                </motion.div>
+                </motion.button>
             </div>
         </motion.div>
     );
@@ -97,7 +97,6 @@ interface ModalData {
     title: string;
     description: string;
     items: { name: string; ext: string }[];
-    restricted?: boolean;
 }
 
 const modalData: ModalData[] = [
@@ -110,7 +109,6 @@ const modalData: ModalData[] = [
             { name: 'Templates Scrum', ext: 'XLSX' },
             { name: 'Guías PMO', ext: 'PDF' },
         ],
-        restricted: true,
     },
     {
         id: 'metodologias',
@@ -227,18 +225,11 @@ function PMOModal({
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {!member && data.restricted && (
-                                            <span className="flex items-center gap-1 text-[10px] font-semibold text-electric-orange border border-electric-orange/30 bg-electric-orange/10 px-2 py-0.5 rounded-full">
-                                                <Lock className="w-2.5 h-2.5" />
-                                                Solo miembros
-                                            </span>
-                                        )}
                                         <button
-                                            disabled
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed"
+                                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition-all"
                                         >
-                                            <Download className="w-3 h-3" />
-                                            Próximamente
+                                           <Download className="w-3 h-3" />
+                                           Descargar
                                         </button>
                                     </div>
                                 </div>
@@ -251,7 +242,7 @@ function PMOModal({
                         <div className="pt-4 border-t border-white/5">
                             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all">
                                 <Upload className="w-4 h-4" />
-                                Subir nuevo documento
+                                Subir PDF
                             </button>
                         </div>
                     )}
@@ -266,10 +257,6 @@ export default function PMOKnowledgeSection({ member, onAccessRestrictedResource
     const [openModal, setOpenModal] = useState<string | null>(null);
 
     const handleBentoClick = (id: string) => {
-        if (id === 'biblioteca' && !member && onAccessRestrictedResource) {
-            onAccessRestrictedResource('Biblioteca de Recursos');
-            return;
-        }
         setOpenModal(id);
     };
 

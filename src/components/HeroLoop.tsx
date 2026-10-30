@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const TOTAL_FRAMES = 141;
 const FPS = 30;
-const BASE_URL = 'https://raw.githubusercontent.com/20233999-collab/web-cipro/92750cf119c39e5f44d034664fa0a6cb199e901a/public/sequence/loop_cipro/';
+const BASE_URL = '/imagenes/sequence/loop_cipro/';
 
 const HeroLoop: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -10,7 +10,9 @@ interface Postulacion {
     whatsapp: string;
     carrera: string;
     ciclo: string;
-    fechaRegistro: string;
+    codigoUni: string;
+    fecha: string;
+    hora: string;
     estado: string;
 }
 
@@ -48,15 +50,17 @@ export default function AdminPostulaciones() {
     const handleExportCSV = () => {
         if (postulaciones.length === 0) return;
 
-        const headers = ['ID', 'Nombres y Apellidos', 'Correo', 'WhatsApp', 'Carrera', 'Ciclo', 'Fecha Registro', 'Estado'];
+        const headers = ['ID', 'Fecha', 'Hora', 'Código UNI', 'Nombres y Apellidos', 'Correo', 'WhatsApp', 'Carrera', 'Ciclo', 'Estado'];
         const rows = postulaciones.map(p => [
             p.id,
+            p.fecha,
+            p.hora,
+            p.codigoUni,
             `"${p.nombres.replace(/"/g, '""')}"`,
             p.correo,
             p.whatsapp,
             `"${p.carrera.replace(/"/g, '""')}"`,
             p.ciclo,
-            p.fechaRegistro,
             p.estado
         ]);
 
@@ -222,7 +226,7 @@ export default function AdminPostulaciones() {
                                                         </span>
                                                     </td>
                                                     <td className="py-3.5 px-4 text-xs text-gray-400 whitespace-nowrap">
-                                                        {new Date(item.fechaRegistro).toLocaleDateString()}
+                                                        {item.fecha} <span className="text-gray-500">{item.hora}</span>
                                                     </td>
                                                     <td className="py-3.5 px-4 text-right">
                                                         <a

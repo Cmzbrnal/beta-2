@@ -65,16 +65,29 @@ export async function POST(request: NextRequest) {
         try {
             const webhookResponse = await fetch(googleWebhook, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json'
+                },
                 body: JSON.stringify({ sheet: 'Postulaciones', data: nuevaPostulacion }),
                 cache: 'no-store',
+                redirect: 'follow',
                 signal: AbortSignal.timeout(10000)
             });
-            const webhookBody = await webhookResponse.json().catch(() => null) as {
+            const responseText = await webhookResponse.text();
+            let webhookBody: {
                 success?: boolean;
                 error?: string;
                 message?: string;
-            } | null;
+            } | null = null;
+
+            try {
+                webhookBody = JSON.parse(responseText);
+            } catch {
+                throw new Error(
+                    `Google Sheets respondió ${webhookResponse.status} con una respuesta no JSON`
+                );
+            }
 
             if (!webhookResponse.ok || webhookBody?.success !== true) {
                 throw new Error(
@@ -85,8 +98,13 @@ export async function POST(request: NextRequest) {
             }
         } catch (webhookError) {
             console.error('Error al sincronizar con Google Sheets:', webhookError);
+            const detail = webhookError instanceof Error ? webhookError.message : 'error desconocido';
             return NextResponse.json(
-                { success: false, message: 'No se pudo registrar la postulación en Google Sheets. Inténtalo nuevamente.' },
+                {
+                    success: false,
+                    message: 'No se pudo registrar la postulación en Google Sheets.',
+                    detail
+                },
                 { status: 502 }
             );
         }

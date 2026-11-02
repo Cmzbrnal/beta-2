@@ -75,7 +75,10 @@ export default function PostulacionModal({ isOpen, onClose }: PostulacionModalPr
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Error al enviar la postulación');
+                throw new Error(
+                    [data.message, data.detail].filter(Boolean).join(' ') ||
+                    'Error al enviar la postulación'
+                );
             }
 
             setStatus('success');

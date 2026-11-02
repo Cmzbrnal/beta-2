@@ -19,7 +19,9 @@ export async function POST(request: NextRequest) {
         const codigoUpper = String(codigoUni).trim().toUpperCase();
 
         // 1. Si existe webhook de Google Sheets, consultar la pestaña "Miembros"
-        const googleWebhook = process.env.GOOGLE_SHEETS_WEBHOOK;
+        const googleWebhook =
+            process.env.GOOGLE_SHEETS_WEBHOOK ||
+            process.env.GOOGLE_SHEETS_WEBHOOK_URL;
         if (googleWebhook) {
             try {
                 const sheetRes = await fetch(`${googleWebhook}?sheet=Miembros&codigoUni=${encodeURIComponent(codigoUpper)}`, {

@@ -4,7 +4,7 @@ import path from 'path';
 
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
 const DATA_FILE = path.join(DATA_DIR, 'postulaciones.json');
-const DIRECTIVA_KEY = process.env.CIPRO_DIRECTIVA_KEY || 'directiva_cipro_2026';
+const DIRECTIVA_KEY = process.env.CIPRO_DIRECTIVA_KEY;
 
 function getGoogleWebhook() {
     return process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK_URL;
@@ -109,9 +109,10 @@ export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('authorization');
         const keyParam = request.nextUrl.searchParams.get('key');
-        const isAuthorized =
+        const isAuthorized = Boolean(DIRECTIVA_KEY) && (
             keyParam === DIRECTIVA_KEY ||
-            authHeader === 'Bearer ' + DIRECTIVA_KEY;
+            authHeader === 'Bearer ' + DIRECTIVA_KEY
+        );
 
         if (!isAuthorized) {
             return NextResponse.json(

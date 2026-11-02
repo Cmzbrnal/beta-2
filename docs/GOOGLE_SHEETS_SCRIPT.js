@@ -35,7 +35,9 @@ function setupSheets() {
 }
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
   try {
+    lock.waitLock(10000);
     setupSheets();
     const sheet = SpreadsheetApp
       .getActiveSpreadsheet()
@@ -43,6 +45,14 @@ function doPost(e) {
     const body = JSON.parse((e.postData && e.postData.contents) || '{}');
     const data = body.data || body;
     const now = new Date();
+
+    const requiredFields = ['codigoUni', 'nombres', 'correo', 'whatsapp', 'carrera', 'ciclo'];
+    if (requiredFields.some(field => !String(data[field] || '').trim())) {
+      return jsonResponse({
+        success: false,
+        error: 'Faltan campos obligatorios'
+      });
+    }
 
     sheet.appendRow([
       data.id || `POST-${now.getTime()}`,
@@ -63,6 +73,10 @@ function doPost(e) {
     });
   } catch (error) {
     return jsonResponse({ success: false, error: String(error) });
+  } finally {
+    if (lock.hasLock()) {
+      lock.releaseLock();
+    }
   }
 }
 

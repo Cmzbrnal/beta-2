@@ -46,7 +46,19 @@ export default function BenefitCard({
             transition={{ delay: index * 0.15, duration: 0.6 }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onFocus={() => setIsHovered(true)}
+            onBlur={() => setIsHovered(false)}
+            onKeyDown={(event) => {
+                if (hasDetail && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    onClick?.();
+                }
+            }}
             onClick={hasDetail ? onClick : undefined}
+            role={hasDetail ? 'button' : undefined}
+            tabIndex={hasDetail ? 0 : undefined}
+            aria-expanded={hasDetail ? isOpen : undefined}
+            aria-label={hasDetail ? `${title}: ver detalles` : title}
             className={cn(
                 "group relative h-[320px] rounded-3xl overflow-hidden",
                 "border border-white/10 hover:border-electric-orange/50",

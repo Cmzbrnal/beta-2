@@ -23,10 +23,19 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { nombres, codigoUni, correo, whatsapp, carrera, ciclo } = body;
+        const values = [nombres, codigoUni, correo, whatsapp, carrera, ciclo];
 
-        if (!nombres || !codigoUni || !correo || !whatsapp || !carrera || !ciclo) {
+        if (values.some((value) => typeof value !== 'string' || !value.trim())) {
             return NextResponse.json(
                 { success: false, message: 'Todos los campos son obligatorios' },
+                { status: 400 }
+            );
+        }
+
+        const normalizedEmail = correo.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return NextResponse.json(
+                { success: false, message: 'Ingresa un correo electrónico válido' },
                 { status: 400 }
             );
         }
@@ -37,11 +46,11 @@ export async function POST(request: NextRequest) {
             fecha: now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }),
             hora: now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             codigoUni: String(codigoUni).trim().toUpperCase(),
-            nombres: String(nombres).trim(),
-            correo: String(correo).trim().toLowerCase(),
-            whatsapp: String(whatsapp).trim(),
-            carrera: String(carrera).trim(),
-            ciclo: String(ciclo).trim(),
+            nombres: nombres.trim(),
+            correo: normalizedEmail,
+            whatsapp: whatsapp.trim(),
+            carrera: carrera.trim(),
+            ciclo: ciclo.trim(),
             estado: 'Postulación'
         };
 

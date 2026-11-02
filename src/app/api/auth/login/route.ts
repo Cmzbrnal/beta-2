@@ -4,6 +4,15 @@ import path from 'path';
 
 const DATA_FILE = path.join(process.cwd(), 'src', 'data', 'miembros.json');
 
+interface LocalMember {
+    codigoUni: string;
+    password: string;
+    nombres: string;
+    carrera: string;
+    ciclo: string;
+    estado?: string;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -26,7 +35,9 @@ export async function POST(request: NextRequest) {
             try {
                 const sheetRes = await fetch(`${googleWebhook}?sheet=Miembros&codigoUni=${encodeURIComponent(codigoUpper)}`, {
                     method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(10000)
                 });
                 const sheetData = await sheetRes.json();
                 if (sheetData.success && sheetData.member) {
@@ -48,6 +59,12 @@ export async function POST(request: NextRequest) {
                         );
                     }
                 }
+                if (sheetRes.ok && sheetData.success === false) {
+                    return NextResponse.json(
+                        { success: false, message: 'Código de estudiante o contraseña incorrectos' },
+                        { status: 401 }
+                    );
+                }
             } catch (err) {
                 console.warn('Google Sheets no disponible, usando base de datos local:', err);
             }
@@ -56,10 +73,10 @@ export async function POST(request: NextRequest) {
         // 2. Validación con base local (miembros.json)
         if (fs.existsSync(DATA_FILE)) {
             const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-            const miembros = JSON.parse(raw || '[]');
+            const miembros = JSON.parse(raw || '[]') as LocalMember[];
 
             const miembro = miembros.find(
-                (m: any) => String(m.codigoUni).trim().toUpperCase() === codigoUpper
+                (m) => m.codigoUni.trim().toUpperCase() === codigoUpper
             );
 
             if (miembro && miembro.password === password) {
@@ -80,7 +97,7 @@ export async function POST(request: NextRequest) {
             { success: false, message: 'Código de estudiante o contraseña incorrectos' },
             { status: 401 }
         );
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error en login de miembros:', error);
         return NextResponse.json(
             { success: false, message: 'Error en el servidor al autenticar' },

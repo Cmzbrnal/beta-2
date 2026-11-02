@@ -4,9 +4,11 @@ import path from 'path';
 
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
 const DATA_FILE = path.join(DATA_DIR, 'postulaciones.json');
-
-// Clave privada para la directiva de CIPRO
 const DIRECTIVA_KEY = process.env.CIPRO_DIRECTIVA_KEY || 'directiva_cipro_2026';
+
+function getGoogleWebhook() {
+    return process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+}
 
 function ensureDataFile() {
     if (!fs.existsSync(DATA_DIR)) {
@@ -30,35 +32,23 @@ export async function POST(request: NextRequest) {
         }
 
         const now = new Date();
-        const fecha = now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
-        const hora = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
         const nuevaPostulacion = {
             id: `POST-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            fecha,
-            hora,
+            fecha: now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+            hora: now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             codigoUni: String(codigoUni).trim().toUpperCase(),
             nombres: String(nombres).trim(),
             correo: String(correo).trim().toLowerCase(),
             whatsapp: String(whatsapp).trim(),
             carrera: String(carrera).trim(),
             ciclo: String(ciclo).trim(),
-            estado: 'Postulación' // Estado solicitado: Postulación
+            estado: 'Postulación'
         };
 
-        // Google Sheets es el almacenamiento principal en producción. En Vercel
-        // el sistema de archivos local no es persistente y puede ser de solo lectura.
-        const googleWebhook =
-            process.env.GOOGLE_SHEETS_WEBHOOK ||
-            process.env.GOOGLE_SHEETS_WEBHOOK_URL;
-
+        const googleWebhook = getGoogleWebhook();
         if (!googleWebhook) {
-            console.error('Google Sheets no está configurado: falta GOOGLE_SHEETS_WEBHOOK');
             return NextResponse.json(
-                {
-                    success: false,
-                    message: 'No se pudo registrar la postulación: Google Sheets no está configurado en el servidor.'
-                },
+                { success: false, message: 'No se pudo registrar la postulación: Google Sheets no está configurado en el servidor.' },
                 { status: 503 }
             );
         }
@@ -67,19 +57,16 @@ export async function POST(request: NextRequest) {
             const webhookResponse = await fetch(googleWebhook, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sheet: 'Postulaciones',
-                    data: nuevaPostulacion
-                }),
+                body: JSON.stringify({ sheet: 'Postulaciones', data: nuevaPostulacion }),
                 cache: 'no-store',
                 signal: AbortSignal.timeout(10000)
             });
-
             const webhookBody = await webhookResponse.json().catch(() => null) as {
                 success?: boolean;
                 error?: string;
                 message?: string;
             } | null;
+
             if (!webhookResponse.ok || webhookBody?.success !== true) {
                 throw new Error(
                     `Google Sheets respondió ${webhookResponse.status}: ${
@@ -87,27 +74,21 @@ export async function POST(request: NextRequest) {
                     }`
                 );
             }
-        } catch (webhookErr) {
-            console.error('Error al sincronizar con Google Sheets:', webhookErr);
+        } catch (webhookError) {
+            console.error('Error al sincronizar con Google Sheets:', webhookError);
             return NextResponse.json(
-                {
-                    success: false,
-                    message: 'No se pudo registrar la postulación en Google Sheets. Inténtalo nuevamente.'
-                },
+                { success: false, message: 'No se pudo registrar la postulación en Google Sheets. Inténtalo nuevamente.' },
                 { status: 502 }
             );
         }
 
-        // Respaldo local para desarrollo y entornos con almacenamiento persistente.
-        // Un fallo aquí no debe invalidar una postulación ya registrada en Sheets.
         try {
             ensureDataFile();
-            const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
-            const postulaciones = JSON.parse(rawData || '[]');
+            const postulaciones = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8') || '[]');
             postulaciones.push(nuevaPostulacion);
             fs.writeFileSync(DATA_FILE, JSON.stringify(postulaciones, null, 2), 'utf-8');
-        } catch (localErr) {
-            console.warn('Postulación sincronizada en Google Sheets, pero no se pudo guardar el respaldo local:', localErr);
+        } catch (localError) {
+            console.warn('Postulación sincronizada en Google Sheets, pero no se pudo guardar el respaldo local:', localError);
         }
 
         return NextResponse.json({
@@ -115,7 +96,7 @@ export async function POST(request: NextRequest) {
             message: 'Postulación registrada exitosamente',
             id: nuevaPostulacion.id
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error en API postulaciones:', error);
         return NextResponse.json(
             { success: false, message: 'Error interno del servidor al procesar la postulación' },
@@ -124,15 +105,13 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// Endpoint estrictamente para la DIRECTIVA (los miembros comunes no acceden aquí)
 export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('authorization');
         const keyParam = request.nextUrl.searchParams.get('key');
-
         const isAuthorized =
             keyParam === DIRECTIVA_KEY ||
-            authHeader === `Bearer ${DIRECTIVA_KEY}`;
+            authHeader === 'Bearer ' + DIRECTIVA_KEY;
 
         if (!isAuthorized) {
             return NextResponse.json(
@@ -141,16 +120,40 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        ensureDataFile();
-        const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
-        const postulaciones = JSON.parse(rawData || '[]');
+        const googleWebhook = getGoogleWebhook();
+        if (googleWebhook) {
+            try {
+                const sheetResponse = await fetch(
+                    `${googleWebhook}?sheet=Postulaciones`,
+                    { cache: 'no-store', signal: AbortSignal.timeout(10000) }
+                );
+                const sheetData = await sheetResponse.json().catch(() => null);
 
+                if (!sheetResponse.ok || sheetData?.success !== true) {
+                    throw new Error(sheetData?.error || 'Respuesta no válida de Google Sheets');
+                }
+
+                return NextResponse.json({
+                    success: true,
+                    total: sheetData.total,
+                    postulaciones: sheetData.postulaciones,
+                    source: 'google-sheets'
+                });
+            } catch (sheetError) {
+                console.error('Error consultando postulaciones en Google Sheets:', sheetError);
+            }
+        }
+
+        ensureDataFile();
+        const postulaciones = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8') || '[]');
         return NextResponse.json({
             success: true,
             total: postulaciones.length,
-            postulaciones
+            postulaciones,
+            source: 'local-backup'
         });
-    } catch (error: any) {
+    } catch (error) {
+        console.error('Error al consultar postulaciones:', error);
         return NextResponse.json(
             { success: false, message: 'Error al consultar postulaciones' },
             { status: 500 }

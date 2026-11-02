@@ -29,8 +29,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        ensureDataFile();
-
         const now = new Date();
         const fecha = now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' });
         const hora = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -48,13 +46,8 @@ export async function POST(request: NextRequest) {
             estado: 'Postulación' // Estado solicitado: Postulación
         };
 
-        // 1. Guardar localmente como respaldo
-        const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
-        const postulaciones = JSON.parse(rawData || '[]');
-        postulaciones.push(nuevaPostulacion);
-        fs.writeFileSync(DATA_FILE, JSON.stringify(postulaciones, null, 2), 'utf-8');
-
-        // 2. Reenvío a Google Sheets (Pestaña "Postulaciones")
+        // Google Sheets es el almacenamiento principal en producción. En Vercel
+        // el sistema de archivos local no es persistente y puede ser de solo lectura.
         const googleWebhook =
             process.env.GOOGLE_SHEETS_WEBHOOK ||
             process.env.GOOGLE_SHEETS_WEBHOOK_URL;
@@ -64,7 +57,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: 'La postulación se guardó localmente, pero Google Sheets no está configurado en Vercel.'
+                    message: 'No se pudo registrar la postulación: Google Sheets no está configurado en el servidor.'
                 },
                 { status: 503 }
             );
@@ -82,7 +75,11 @@ export async function POST(request: NextRequest) {
                 signal: AbortSignal.timeout(10000)
             });
 
-            const webhookBody = await webhookResponse.json().catch(() => null);
+            const webhookBody = await webhookResponse.json().catch(() => null) as {
+                success?: boolean;
+                error?: string;
+                message?: string;
+            } | null;
             if (!webhookResponse.ok || webhookBody?.success !== true) {
                 throw new Error(
                     `Google Sheets respondió ${webhookResponse.status}: ${
@@ -95,10 +92,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: 'La postulación se guardó localmente, pero no pudo sincronizarse con Google Sheets.'
+                    message: 'No se pudo registrar la postulación en Google Sheets. Inténtalo nuevamente.'
                 },
                 { status: 502 }
             );
+        }
+
+        // Respaldo local para desarrollo y entornos con almacenamiento persistente.
+        // Un fallo aquí no debe invalidar una postulación ya registrada en Sheets.
+        try {
+            ensureDataFile();
+            const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
+            const postulaciones = JSON.parse(rawData || '[]');
+            postulaciones.push(nuevaPostulacion);
+            fs.writeFileSync(DATA_FILE, JSON.stringify(postulaciones, null, 2), 'utf-8');
+        } catch (localErr) {
+            console.warn('Postulación sincronizada en Google Sheets, pero no se pudo guardar el respaldo local:', localErr);
         }
 
         return NextResponse.json({

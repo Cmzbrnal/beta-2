@@ -55,10 +55,23 @@ export async function POST(request: NextRequest) {
         }
 
         const now = new Date();
+        const fechaPeru = new Intl.DateTimeFormat('es-PE', {
+            timeZone: 'America/Lima',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(now);
+        const horaPeru = new Intl.DateTimeFormat('es-PE', {
+            timeZone: 'America/Lima',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).format(now);
         const nuevaPostulacion = {
             id: `POST-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            fecha: now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }),
-            hora: now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            fecha: fechaPeru,
+            hora: horaPeru,
             codigoUni: String(codigoUni).trim().toUpperCase(),
             nombres: nombres.trim(),
             correo: normalizedEmail,

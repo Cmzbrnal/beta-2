@@ -10,6 +10,20 @@ function getGoogleWebhook() {
     return process.env.GOOGLE_SHEETS_WEBHOOK || process.env.GOOGLE_SHEETS_WEBHOOK_URL;
 }
 
+function getValidGoogleWebhook() {
+    const webhook = getGoogleWebhook()?.trim();
+    if (!webhook) {
+        return null;
+    }
+
+    try {
+        const url = new URL(webhook);
+        return url.protocol === 'https:' ? url.toString() : null;
+    } catch {
+        return null;
+    }
+}
+
 function ensureDataFile() {
     if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -54,10 +68,13 @@ export async function POST(request: NextRequest) {
             estado: 'Postulación'
         };
 
-        const googleWebhook = getGoogleWebhook();
+        const googleWebhook = getValidGoogleWebhook();
         if (!googleWebhook) {
             return NextResponse.json(
-                { success: false, message: 'No se pudo registrar la postulación: Google Sheets no está configurado en el servidor.' },
+                {
+                    success: false,
+                    message: 'No se pudo registrar la postulación: configura GOOGLE_SHEETS_WEBHOOK con una URL /exec válida.'
+                },
                 { status: 503 }
             );
         }
@@ -98,12 +115,10 @@ export async function POST(request: NextRequest) {
             }
         } catch (webhookError) {
             console.error('Error al sincronizar con Google Sheets:', webhookError);
-            const detail = webhookError instanceof Error ? webhookError.message : 'error desconocido';
             return NextResponse.json(
                 {
                     success: false,
-                    message: 'No se pudo registrar la postulación en Google Sheets.',
-                    detail
+                    message: 'No se pudo registrar la postulación en Google Sheets. Verifica la implementación de Apps Script.'
                 },
                 { status: 502 }
             );
@@ -148,7 +163,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const googleWebhook = getGoogleWebhook();
+        const googleWebhook = getValidGoogleWebhook();
         if (googleWebhook) {
             try {
                 const sheetResponse = await fetch(

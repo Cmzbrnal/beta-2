@@ -3,7 +3,9 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { MEMBER_SESSION_COOKIE, readMemberSession } from '@/lib/member-session';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_FILE_SIZE = 8 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+const ALLOWED_FILE_TYPES = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif']);
 
 function errorResponse(message: string, status = 400) {
     return NextResponse.json({ success: false, message }, { status });
@@ -31,7 +33,24 @@ export async function GET(request: NextRequest) {
             : await query.eq('status', 'published');
 
         if (error) throw error;
-        return NextResponse.json({ success: true, projects: data || [] });
+        const projects = await Promise.all((data || []).map(async (project) => {
+            const files = await supabase
+                .from('content_files')
+                .select('id, name, mime_type, public_url')
+                .eq('project', project.id)
+                .order('created_at', { ascending: false });
+            if (files.error) throw files.error;
+            return {
+                ...project,
+                files: (files.data || []).map((file) => ({
+                    id: file.id,
+                    name: file.name,
+                    mimeType: file.mime_type,
+                    url: file.public_url
+                }))
+            };
+        }));
+        return NextResponse.json({ success: true, projects });
     } catch (error) {
         console.error('Error consultando proyectos:', error);
         return errorResponse(error instanceof Error ? error.message : 'No se pudieron cargar los proyectos.', 502);
@@ -66,6 +85,53 @@ export async function POST(request: NextRequest) {
 
             const { data } = supabase.storage.from('contenido-publico').getPublicUrl(storagePath);
             return NextResponse.json({ success: true, imageUrl: data.publicUrl });
+        }
+
+        if (action === 'uploadFile') {
+            const projectId = String(body.projectId || '');
+            const mimeType = String(body.mimeType || '');
+            const fileName = String(body.fileName || '');
+            const base64 = String(body.base64 || '');
+            if (!projectId || !fileName || !base64 || !ALLOWED_FILE_TYPES.has(mimeType)) {
+                return errorResponse('Selecciona un PDF o imagen válido.');
+            }
+            const buffer = Buffer.from(base64, 'base64');
+            if (buffer.byteLength > MAX_FILE_SIZE) return errorResponse('El archivo no puede superar 8 MB.');
+            const storagePath = `projects/${member.codigoUni}/${projectId}/${Date.now()}-${cleanPathPart(fileName)}`;
+            const upload = await supabase.storage
+                .from('contenido-publico')
+                .upload(storagePath, buffer, { contentType: mimeType, upsert: false });
+            if (upload.error) throw upload.error;
+            const { data: publicUrl } = supabase.storage.from('contenido-publico').getPublicUrl(storagePath);
+            const { data, error } = await supabase.from('content_files').insert({
+                member_code: member.codigoUni,
+                project: projectId,
+                name: fileName,
+                mime_type: mimeType,
+                storage_path: storagePath,
+                public_url: publicUrl.publicUrl
+            }).select('id, name, mime_type, public_url').single();
+            if (error) throw error;
+            return NextResponse.json({
+                success: true,
+                file: { id: data.id, name: data.name, mimeType: data.mime_type, url: data.public_url }
+            });
+        }
+
+        if (action === 'deleteFile') {
+            const fileId = String(body.fileId || '');
+            const { data: file, error: findError } = await supabase
+                .from('content_files')
+                .select('storage_path')
+                .eq('id', fileId)
+                .eq('member_code', member.codigoUni)
+                .single();
+            if (findError) throw findError;
+            const remove = await supabase.storage.from('contenido-publico').remove([file.storage_path]);
+            if (remove.error) throw remove.error;
+            const { error } = await supabase.from('content_files').delete().eq('id', fileId).eq('member_code', member.codigoUni);
+            if (error) throw error;
+            return NextResponse.json({ success: true });
         }
 
         if (action === 'save' || action === 'publish' || action === 'delete') {

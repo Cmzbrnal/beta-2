@@ -13,6 +13,7 @@ type Project = {
     contexto: string;
     solucion: string;
     anexos: { name: string; ext: string }[];
+    files?: { id: string; name: string; url: string; mimeType: string }[];
     status?: 'draft' | 'published';
 };
 
@@ -94,10 +95,11 @@ function ProjectModal({
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [files, setFiles] = useState<{ id: string; name: string; url: string }[]>([]);
+    const [files, setFiles] = useState<{ id: string; name: string; url: string; mimeType?: string }[]>(project.files || []);
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
+        if (project.id) return;
         if (!member?.codigoUni) return;
         fetch(`/api/member-content?sheet=Contenido&memberCode=${encodeURIComponent(member.codigoUni)}&project=${encodeURIComponent(project.title)}`)
             .then((response) => response.json())
@@ -108,6 +110,7 @@ function ProjectModal({
     }, [member?.codigoUni, project.title]);
 
     useEffect(() => {
+        if (project.id) return;
         if (!member?.codigoUni) return;
         fetch(`/api/member-content?sheet=Archivos&memberCode=${encodeURIComponent(member.codigoUni)}&project=${encodeURIComponent(project.title)}`)
             .then((response) => response.json())
@@ -134,11 +137,12 @@ function ProjectModal({
                 reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
                 reader.readAsDataURL(file);
             });
-            const response = await fetch('/api/member-content', {
+            const response = await fetch(project.id ? '/api/projects' : '/api/member-content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'uploadFile',
+                    projectId: project.id,
                     memberCode: member.codigoUni,
                     project: project.title,
                     fileName: file.name,
@@ -158,10 +162,10 @@ function ProjectModal({
     };
 
     const deleteProjectFile = async (fileId: string) => {
-        const response = await fetch('/api/member-content', {
+        const response = await fetch(project.id ? '/api/projects' : '/api/member-content', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'deleteFile', memberCode: member.codigoUni, fileId })
+            body: JSON.stringify({ action: 'deleteFile', memberCode: member.codigoUni, projectId: project.id, fileId })
         });
         const data = await response.json();
         if (response.ok && data.success) setFiles((current) => current.filter((file) => file.id !== fileId));
@@ -212,7 +216,7 @@ function ProjectModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={onClose}
         >
             <motion.div
@@ -220,7 +224,7 @@ function ProjectModal({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="relative w-full max-w-3xl bg-[#0B0F17] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
+                className="relative w-full max-w-3xl bg-[#0B0F17] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col pb-20 md:pb-0"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Orange top line */}
@@ -308,12 +312,7 @@ function ProjectModal({
                                             {anexo.ext}
                                         </span>
                                     </div>
-                                    <button
-                                        disabled
-                                        className="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed"
-                                    >
-                                        Próximamente
-                                    </button>
+                                    <span className="text-xs text-gray-500">Sin archivo</span>
                                 </div>
                             ))}
                         </div>
@@ -449,8 +448,8 @@ function ProjectEditor({
     };
 
     return (
-        <motion.div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={onClose}>
-            <motion.div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0B0F17] p-6" onClick={(event) => event.stopPropagation()}>
+        <motion.div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={onClose}>
+            <motion.div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0B0F17] p-6 pb-28 md:pb-6" onClick={(event) => event.stopPropagation()}>
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-bold text-white">{project ? 'Editar proyecto' : 'Nuevo proyecto'}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -477,7 +476,7 @@ function ProjectEditor({
                     </div>
                 )}
                 {message && <p className="mt-4 text-sm text-gray-400">{message}</p>}
-                <div className="mt-6 flex flex-wrap gap-2">
+                <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <button onClick={() => setPreview((value) => !value)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white">{preview ? 'Volver a editar' : 'Previsualizar'}</button>
                     <button onClick={() => save(false)} disabled={saving} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300">{saving ? 'Guardando...' : 'Guardar borrador'}</button>
                     <button onClick={() => save(true)} disabled={saving} className="rounded-lg bg-electric-orange px-4 py-2 text-sm font-semibold text-white">Publicar</button>
@@ -509,10 +508,12 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                         contexto: project.content?.contexto || '',
                         solucion: project.content?.solucion || '',
                         anexos: project.content?.anexos || [],
+                        files: project.files || [],
                         status: project.status,
                     }));
-                    const remoteTitles = new Set(remoteProjects.map((project: Project) => project.title));
-                    setProjectList([...defaultProjects.filter((project) => !remoteTitles.has(project.title)), ...remoteProjects]);
+                    setProjectList(remoteProjects);
+                } else {
+                    setProjectList([]);
                 }
             })
             .catch(() => undefined);
@@ -562,7 +563,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
         });
     };
 
-    const visibleCards = getVisibleCards();
+    const visibleCards = totalProjects ? getVisibleCards() : [];
 
     return (
         <section id="portafolio" className="py-8 md:py-32 bg-void-black relative overflow-hidden">
@@ -585,6 +586,13 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                     </p>
                 </motion.div>
 
+                {projectList.length === 0 && (
+                    <div className="flex min-h-[220px] items-center justify-center text-center text-gray-500">
+                        Aún no hay proyectos publicados.
+                    </div>
+                )}
+
+                {projectList.length > 0 && (<>
                 {/* Carousel Container */}
                 <div className="relative flex items-center justify-center h-[520px] md:h-[620px]">
 
@@ -715,9 +723,10 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                         />
                     ))}
                 </div>
+                </>)}
 
                 {member && (
-                    <div className="mt-8 flex justify-center">
+                    <div className="mt-8 flex justify-center pb-24 md:pb-8">
                         <button onClick={() => setEditingProject(null)} className="rounded-full bg-electric-orange px-5 py-2 text-sm font-semibold text-white hover:bg-orange-500">
                             + Nuevo proyecto
                         </button>

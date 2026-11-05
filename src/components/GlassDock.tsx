@@ -25,7 +25,7 @@ export default function GlassDock() {
     });
 
     return (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none">
             <motion.div
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: visible ? 0 : 100, opacity: visible ? 1 : 0 }}

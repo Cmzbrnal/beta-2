@@ -227,6 +227,7 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
     const [editing, setEditing] = useState<TrainingItem | null>(null);
     const [creating, setCreating] = useState(false);
     const [message, setMessage] = useState('');
+    const [isMobile, setIsMobile] = useState(false);
     const trainings = useMemo(() => {
         const current = entities.filter((entity) => entity.content?.kind === 'training').map((entity) => ({
             id: entity.id,
@@ -240,6 +241,12 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
         return legacy ? [{ id: legacy.id, title: legacy.title, subtitle: 'Metodologías y herramientas de clase mundial', text: 'Programa de capacitación disponible.', files: legacy.files || [] }] : [defaultTrainingCard];
     }, [entities]);
     useEffect(() => { setCenterIndex((index) => Math.min(index, Math.max(trainings.length - 1, 0))); }, [trainings.length]);
+    useEffect(() => {
+        const updateViewport = () => setIsMobile(window.innerWidth < 640);
+        updateViewport();
+        window.addEventListener('resize', updateViewport);
+        return () => window.removeEventListener('resize', updateViewport);
+    }, []);
     const save = async (training: TrainingItem, publish = true) => {
         if (!member?.codigoUni) return;
         const response = await fetch('/api/content-entities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: publish ? 'publish' : 'save', id: training.id, section: 'capacitaciones', title: training.title, content: { kind: 'training', subtitle: training.subtitle, text: training.text } }) });
@@ -247,28 +254,28 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
         if (!response.ok || !data.success) { setMessage(data.message); return; }
         setEditing(null); setCreating(false); setMessage(publish ? 'Capacitación publicada.' : 'Borrador guardado.'); reload();
     };
-    const visible = trainings.map((training, index) => ({ training, index })).filter(({ index }) => Math.abs(index - centerIndex) <= 1);
+    const visible = trainings.map((training, index) => ({ training, index })).filter(({ index }) => isMobile ? index === centerIndex : Math.abs(index - centerIndex) <= 1);
     return <ModalWrapper onClose={onClose}>
         <ModalHeader title="Capacitaciones" subtitle="Explora cada capacitación y abre sus detalles" onClose={onClose} />
         {member && <div className="mb-4 flex flex-wrap gap-2"><button onClick={() => { setCreating(true); setEditing(null); }} className="flex items-center gap-2 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Plus className="h-4 w-4" />Nueva capacitación</button></div>}
         {creating && <TrainingForm onSave={(training) => save(training, true)} onCancel={() => setCreating(false)} />}
         {editing && <TrainingForm training={editing} onSave={(training) => save(training, true)} onCancel={() => setEditing(null)} />}
-        <div className="relative mt-5 flex min-h-[430px] items-center justify-center overflow-hidden px-8 sm:px-14">
-            <button onClick={() => setCenterIndex((index) => (index - 1 + trainings.length) % trainings.length)} className="absolute left-0 z-10 rounded-full border border-white/10 bg-white/5 p-2 text-white"><span className="sr-only">Anterior</span>‹</button>
-            <div className="relative h-[360px] w-full max-w-[760px]">
+        <div className="relative mt-5 flex min-h-[410px] items-center justify-center overflow-hidden px-10 sm:px-16">
+            <button aria-label="Capacitación anterior" onClick={() => setCenterIndex((index) => (index - 1 + trainings.length) % trainings.length)} className="absolute left-1 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-white/5 p-2 text-white hover:bg-white/10 sm:left-2"><span className="sr-only">Anterior</span>‹</button>
+            <div className="relative h-[360px] w-full max-w-[620px]">
                 <AnimatePresence initial={false}>
                     {visible.map(({ training, index }) => {
                         const offset = index - centerIndex;
                         const isCenter = offset === 0;
                         const image = training.files.find((file) => file.mimeType.startsWith('image/'));
-                        return <motion.button key={training.id || training.title} onClick={() => isCenter ? setSelected(index) : setCenterIndex(index)} animate={{ x: `${offset * (isCenter ? 0 : 42)}%`, scale: isCenter ? 1 : .72, opacity: isCenter ? 1 : .45, zIndex: isCenter ? 2 : 1 }} className="absolute left-1/2 top-1/2 flex w-[min(78vw,360px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#111722] text-left shadow-2xl">
+                        return <motion.button key={training.id || training.title} onClick={() => isCenter ? setSelected(index) : setCenterIndex(index)} initial={{ opacity: 0, x: offset * 240 }} animate={{ x: offset * 260, scale: isCenter ? 1 : .78, opacity: isCenter ? 1 : .35, zIndex: isCenter ? 2 : 1 }} className="absolute left-1/2 top-1/2 flex h-[350px] w-[min(78vw,360px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#111722] text-left shadow-2xl transition-shadow hover:shadow-[0_0_40px_rgba(255,255,255,0.12)]">
                             <div className="min-h-[76px] p-4 pb-3"><h4 className="line-clamp-1 text-lg font-bold text-white">{training.title}</h4><p className="mt-1 line-clamp-2 text-sm text-gray-400">{training.subtitle}</p></div>
-                            {image ? <img src={image.url} alt={training.title} className="h-56 w-full object-cover" /> : <div className="flex h-56 items-center justify-center bg-gradient-to-br from-electric-orange/20 to-blue-500/10 text-sm text-gray-400">Sin imagen</div>}
+                            {image ? <img src={image.url} alt={training.title} className="h-[274px] w-full object-cover" /> : <div className="flex h-[274px] items-center justify-center bg-gradient-to-br from-electric-orange/20 to-blue-500/10 text-sm text-gray-400">Sin imagen</div>}
                         </motion.button>;
                     })}
                 </AnimatePresence>
             </div>
-            <button onClick={() => setCenterIndex((index) => (index + 1) % trainings.length)} className="absolute right-0 z-10 rounded-full border border-white/10 bg-white/5 p-2 text-white"><span className="sr-only">Siguiente</span>›</button>
+            <button aria-label="Siguiente capacitación" onClick={() => setCenterIndex((index) => (index + 1) % trainings.length)} className="absolute right-1 top-1/2 z-10 -translate-y-1/2 rounded-full border border-white/10 bg-white/5 p-2 text-white hover:bg-white/10 sm:right-2"><span className="sr-only">Siguiente</span>›</button>
         </div>
         <div className="flex justify-center gap-2">{trainings.map((training, index) => <button key={training.id || index} onClick={() => setCenterIndex(index)} className={`h-2 rounded-full transition-all ${centerIndex === index ? 'w-6 bg-electric-orange' : 'w-2 bg-white/30'}`} aria-label={`Ver ${training.title}`} />)}</div>
         {selected !== null && trainings[selected] && <TrainingDetail training={trainings[selected]} entity={entities.find((entity) => entity.id === trainings[selected].id)} member={member} onClose={() => setSelected(null)} onEdit={() => { setEditing(trainings[selected]); setSelected(null); }} onFilesChange={reload} />}

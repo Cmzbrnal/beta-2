@@ -511,9 +511,13 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                         files: project.files || [],
                         status: project.status,
                     }));
-                    setProjectList(remoteProjects);
+                    const remoteTitles = new Set(remoteProjects.map((project: Project) => project.title));
+                    setProjectList([
+                        ...defaultProjects.filter((project) => !remoteTitles.has(project.title)),
+                        ...remoteProjects,
+                    ]);
                 } else {
-                    setProjectList([]);
+                    setProjectList(defaultProjects);
                 }
             })
             .catch(() => undefined);

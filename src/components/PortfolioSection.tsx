@@ -364,6 +364,9 @@ function ProjectEditor({
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const imageInputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [files, setFiles] = useState(project?.files || []);
+    const [uploadingFile, setUploadingFile] = useState(false);
 
     const update = (key: keyof typeof form, value: string) => {
         setForm((current) => ({ ...current, [key]: value }));
@@ -396,6 +399,49 @@ function ProjectEditor({
             setMessage('Imagen cargada.');
         } catch (error) {
             setMessage(error instanceof Error ? error.message : 'No se pudo cargar la imagen.');
+        }
+    };
+
+    const uploadProjectFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file || !project?.id) return;
+        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+        if (!allowed.includes(file.type) || file.size > 8 * 1024 * 1024) {
+            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 8 MB.');
+            return;
+        }
+
+        setUploadingFile(true);
+        setMessage('');
+        try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+                reader.readAsDataURL(file);
+            });
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'uploadFile',
+                    projectId: project.id,
+                    memberCode: member.codigoUni,
+                    project: project.title,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    base64,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            setFiles((current) => [...current, data.file]);
+            setMessage('Archivo adicional cargado.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudo cargar el archivo.');
+        } finally {
+            setUploadingFile(false);
         }
     };
 
@@ -468,6 +514,34 @@ function ProjectEditor({
                         <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadImage} className="hidden" />
                         <button onClick={() => imageInputRef.current?.click()} className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300">Subir imagen</button>
                         {form.imageUrl && <img src={form.imageUrl} alt="Vista previa" className="h-32 w-full rounded-lg object-cover" />}
+                        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                            <p className="text-sm font-semibold text-white">Archivos adicionales</p>
+                            <p className="mt-1 text-xs text-gray-500">Puedes agregar varios PDFs o imágenes además del banner.</p>
+                            {project?.id ? (
+                                <>
+                                    <input ref={fileInputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadProjectFile} className="hidden" />
+                                    <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile} className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300 disabled:opacity-50">
+                                        {uploadingFile ? 'Cargando...' : 'Subir PDF o imagen'}
+                                    </button>
+                                    {files.length > 0 && (
+                                        <div className="mt-3 space-y-2">
+                                            {files.map((file) => (
+                                                <a key={file.id} href={file.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-blue-300 hover:underline">
+                                                    {file.mimeType?.startsWith('image/') ? (
+                                                        <img src={file.url} alt={file.name} className="h-8 w-8 rounded object-cover" />
+                                                    ) : (
+                                                        <FileText className="h-4 w-4" />
+                                                    )}
+                                                    <span className="truncate">{file.name}</span>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="mt-3 text-xs text-gray-500">Guarda primero el proyecto como borrador para habilitar esta opción.</p>
+                            )}
+                        </div>
                     </div>
                 )}
                 {message && <p className="mt-4 text-sm text-gray-400">{message}</p>}

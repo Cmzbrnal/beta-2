@@ -313,7 +313,7 @@ export default function BenefitsSection({ member, onAccessRestrictedResource }: 
                 </motion.div>
 
                 {/* Grid de tarjetas */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="mx-auto grid max-w-4xl grid-cols-1 gap-8 md:grid-cols-2">
                     {benefits.map((benefit, index) => (
                         <div key={benefit.id} className="relative">
                             <BenefitCard

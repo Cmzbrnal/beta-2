@@ -11,9 +11,7 @@ import {
     ArrowRight,
     Sparkles,
     X,
-    Download,
     Upload,
-    Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -96,7 +94,6 @@ interface ModalData {
     id: string;
     title: string;
     description: string;
-    items: { name: string; ext: string }[];
     restricted?: boolean;
 }
 
@@ -105,62 +102,32 @@ const modalData: ModalData[] = [
         id: 'biblioteca',
         title: 'Biblioteca de Recursos',
         description: '500+ templates y guías. Acceso exclusivo para miembros CIPRO con recursos actualizados sobre gestión de proyectos, marcos de referencia y mejores prácticas internacionales.',
-        items: [
-            { name: 'PMBOK Guide 7th Ed', ext: 'PDF' },
-            { name: 'Templates Scrum', ext: 'XLSX' },
-            { name: 'Guías PMO', ext: 'PDF' },
-        ],
         restricted: true,
     },
     {
         id: 'metodologias',
         title: 'Metodologías Ágiles',
         description: 'Scrum, Kanban, SAFe, Design Thinking. Domina las frameworks más utilizadas en proyectos de transformación digital y gestión ágil moderna.',
-        items: [
-            { name: 'Guía Scrum CIPRO', ext: 'PDF' },
-            { name: 'Tablero Kanban template', ext: 'XLSX' },
-            { name: 'SAFe Framework', ext: 'PDF' },
-        ],
     },
     {
         id: 'riesgos',
         title: 'Gestión de Riesgos',
         description: 'Matrices, planes de contingencia y registro de issues. Identifica, analiza y mitiga riesgos como un profesional con herramientas probadas.',
-        items: [
-            { name: 'Matriz de Riesgos', ext: 'XLSX' },
-            { name: 'Plan de Contingencia', ext: 'PDF' },
-            { name: 'Registro de Issues', ext: 'XLSX' },
-        ],
     },
     {
         id: 'kpis',
         title: 'KPIs & Métricas',
         description: 'Dashboards y OKRs para medir el rendimiento de tus proyectos. Herramientas para visualizar el avance y comunicar resultados a stakeholders.',
-        items: [
-            { name: 'Dashboard KPIs', ext: 'XLSX' },
-            { name: 'OKR Templates', ext: 'PDF' },
-            { name: 'Burndown Charts', ext: 'XLSX' },
-        ],
     },
     {
         id: 'pmo',
         title: 'PMO Setup',
         description: 'Constitución de PMO desde cero. Governance models, roles y responsabilidades para estructurar tu oficina de proyectos de manera efectiva.',
-        items: [
-            { name: 'PMO Charter', ext: 'PDF' },
-            { name: 'Governance Model', ext: 'PDF' },
-            { name: 'Roles & Responsabilidades', ext: 'XLSX' },
-        ],
     },
     {
         id: 'documentacion',
         title: 'Documentación',
         description: 'Charters, planes, reportes y plantillas profesionales. Todo lo que necesitas para documentar tus proyectos con estándares internacionales.',
-        items: [
-            { name: 'Project Charter', ext: 'PDF' },
-            { name: 'Plan de Proyecto', ext: 'PDF' },
-            { name: 'Reporte de Avance', ext: 'XLSX' },
-        ],
     },
 ];
 
@@ -284,37 +251,11 @@ function PMOModal({
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                             Contenido disponible
                         </p>
-                        <div className="space-y-2">
-                            {data.items.map((item, i) => (
-                                <div
-                                    key={i}
-                                    className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] hover:border-white/10 transition-all"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <FileText className="w-4 h-4 text-gray-500" />
-                                        <span className="text-sm text-white/80">{item.name}</span>
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-400">
-                                            {item.ext}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {!member && data.restricted && (
-                                            <span className="flex items-center gap-1 text-[10px] font-semibold text-electric-orange border border-electric-orange/30 bg-electric-orange/10 px-2 py-0.5 rounded-full">
-                                                <Lock className="w-2.5 h-2.5" />
-                                                Solo miembros
-                                            </span>
-                                        )}
-                                        <button
-                                            disabled
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white/5 border border-white/10 text-gray-500 cursor-not-allowed"
-                                        >
-                                            <Download className="w-3 h-3" />
-                                            Próximamente
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {!files.length && (
+                            <p className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-sm text-gray-500">
+                                Aún no hay archivos cargados.
+                            </p>
+                        )}
                         {files.map((file) => (
                             <div key={file.id} className="mt-2 flex items-center justify-between gap-3 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
                                 <a href={file.url} target="_blank" rel="noreferrer" className="text-sm text-emerald-300 hover:underline truncate">{file.name}</a>

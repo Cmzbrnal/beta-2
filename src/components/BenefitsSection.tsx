@@ -19,6 +19,7 @@ type Entity = {
     files: EntityFile[];
 };
 type EventItem = { id?: string; nombre: string; fecha: string; lugar: string; tipo: string; estado: 'proximo' | 'pasado'; files?: EntityFile[] };
+type TrainingItem = { id?: string; title: string; subtitle: string; text: string; files: EntityFile[] };
 
 const benefits = [
     { id: 'eventos', icon: Calendar, title: 'Eventos Exclusivos', description: 'Acceso privilegiado a networking y conferencias con líderes de la industria.', imageSrc: '/imagenes/cards/eventos_exclusivos.webp', imageAlt: 'Eventos profesionales y networking', hasModal: true },
@@ -58,6 +59,12 @@ const defaultTraining = {
         { nombre: 'Andrea Vega', cargo: 'Scrum Master — Consultora Ágil' },
         { nombre: 'Marcos Díaz', cargo: 'Design Thinking Facilitator' },
     ],
+};
+const defaultTrainingCard: TrainingItem = {
+    title: 'Programa de Capacitaciones',
+    subtitle: 'Metodologías y herramientas de clase mundial',
+    text: 'Workshops intensivos para dominar las metodologías ágiles modernas.',
+    files: [],
 };
 
 function ModalWrapper({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
@@ -178,27 +185,95 @@ function EventosModal({ onClose, member }: { onClose: () => void; member?: any }
     </ModalWrapper>;
 }
 
+function TrainingForm({ training, onSave, onCancel }: { training?: TrainingItem; onSave: (value: TrainingItem) => void; onCancel: () => void }) {
+    const [form, setForm] = useState<TrainingItem>(training || defaultTrainingCard);
+    const update = (key: 'title' | 'subtitle' | 'text', value: string) => setForm((current) => ({ ...current, [key]: value }));
+    return <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="Título de la capacitación" className={fieldClass} />
+        <input value={form.subtitle} onChange={(event) => update('subtitle', event.target.value)} placeholder="Subtítulo" className={fieldClass} />
+        <textarea value={form.text} onChange={(event) => update('text', event.target.value)} placeholder="Texto descriptivo" rows={4} className={fieldClass} />
+        <div className="flex flex-wrap gap-2">
+            <button onClick={() => form.title.trim() && onSave(form)} className="rounded-lg bg-electric-orange px-3 py-2 text-sm font-semibold text-white"><Save className="mr-1 inline h-4 w-4" />Guardar capacitación</button>
+            <button onClick={onCancel} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300">Cancelar</button>
+        </div>
+    </div>;
+}
+
+function TrainingDetail({ training, entity, member, onClose, onEdit, onFilesChange }: { training: TrainingItem; entity?: Entity; member?: any; onClose: () => void; onEdit: () => void; onFilesChange: () => void }) {
+    const image = training.files.find((file) => file.mimeType.startsWith('image/'));
+    return <ModalWrapper onClose={onClose}>
+        <div className="mb-5 flex items-center justify-between">
+            <div><p className="text-xs uppercase tracking-widest text-electric-orange">Capacitación</p><h3 className="mt-1 text-2xl font-bold text-white">{training.title}</h3></div>
+            <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-gray-400"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="grid gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-start">
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+                {image ? <img src={image.url} alt={training.title} className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center text-sm text-gray-500">Sube una imagen para mostrarla aquí</div>}
+            </div>
+            <div>
+                <h4 className="text-xl font-semibold text-white">{training.subtitle}</h4>
+                <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-300">{training.text}</p>
+                {member && <button onClick={onEdit} className="mt-5 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Pencil className="mr-1 inline h-4 w-4" />Editar textos</button>}
+                {entity && <EntityFiles section="capacitaciones" entity={entity} member={member} onChange={onFilesChange} />}
+            </div>
+        </div>
+    </ModalWrapper>;
+}
+
 function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?: any }) {
     const { entities, loading, reload } = useEntities('capacitaciones', member);
-    const entity = entities.find((item) => item.title === 'Programa de Capacitaciones') || null;
-    const [tab, setTab] = useState<'temario' | 'expositores'>('temario');
-    const [form, setForm] = useState(defaultTraining);
-    const [editing, setEditing] = useState(false);
+    const [centerIndex, setCenterIndex] = useState(0);
+    const [selected, setSelected] = useState<number | null>(null);
+    const [editing, setEditing] = useState<TrainingItem | null>(null);
+    const [creating, setCreating] = useState(false);
     const [message, setMessage] = useState('');
-    useEffect(() => { if (entity) setForm({ temario: entity.content?.temario || defaultTraining.temario, expositores: entity.content?.expositores || defaultTraining.expositores }); }, [entity]);
-    const save = async (publish: boolean) => {
+    const trainings = useMemo(() => {
+        const current = entities.filter((entity) => entity.content?.kind === 'training').map((entity) => ({
+            id: entity.id,
+            title: entity.title,
+            subtitle: entity.content.subtitle || '',
+            text: entity.content.text || '',
+            files: entity.files || [],
+        }));
+        if (current.length) return current;
+        const legacy = entities.find((entity) => entity.title === 'Programa de Capacitaciones');
+        return legacy ? [{ id: legacy.id, title: legacy.title, subtitle: 'Metodologías y herramientas de clase mundial', text: 'Programa de capacitación disponible.', files: legacy.files || [] }] : [defaultTrainingCard];
+    }, [entities]);
+    useEffect(() => { setCenterIndex((index) => Math.min(index, Math.max(trainings.length - 1, 0))); }, [trainings.length]);
+    const save = async (training: TrainingItem, publish = true) => {
         if (!member?.codigoUni) return;
-        const response = await fetch('/api/content-entities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: publish ? 'publish' : 'save', id: entity?.id, section: 'capacitaciones', title: 'Programa de Capacitaciones', content: form }) });
-        const data = await response.json(); if (!response.ok || !data.success) { setMessage(data.message); return; }
-        setEditing(false); setMessage(publish ? 'Capacitación publicada.' : 'Borrador guardado.'); reload();
+        const response = await fetch('/api/content-entities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: publish ? 'publish' : 'save', id: training.id, section: 'capacitaciones', title: training.title, content: { kind: 'training', subtitle: training.subtitle, text: training.text } }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) { setMessage(data.message); return; }
+        setEditing(null); setCreating(false); setMessage(publish ? 'Capacitación publicada.' : 'Borrador guardado.'); reload();
     };
-    const addRow = (key: 'temario' | 'expositores') => setForm((current) => ({ ...current, [key]: [...current[key], key === 'temario' ? { modulo: '', duracion: '' } : { nombre: '', cargo: '' }] }));
-    return <ModalWrapper onClose={onClose}><ModalHeader title="Programa de Capacitaciones" subtitle="Edita el contenido con casillas, sin código" onClose={onClose} />
-        <div className="mb-5 flex border-b border-white/10">{(['temario', 'expositores'] as const).map((value) => <button key={value} onClick={() => setTab(value)} className={`px-4 py-2 text-sm ${tab === value ? 'border-b-2 border-electric-orange text-electric-orange' : 'text-gray-500'}`}>{value === 'temario' ? 'Temario' : 'Expositores'}</button>)}</div>
-        {tab === 'temario' ? <div className="space-y-2">{form.temario.map((item, index) => <div key={index} className="flex gap-2"><input value={item.modulo} disabled={!editing} onChange={(e) => setForm((c) => ({ ...c, temario: c.temario.map((row, i) => i === index ? { ...row, modulo: e.target.value } : row) }))} placeholder="Módulo" className={`${fieldClass} flex-1`} /><input value={item.duracion} disabled={!editing} onChange={(e) => setForm((c) => ({ ...c, temario: c.temario.map((row, i) => i === index ? { ...row, duracion: e.target.value } : row) }))} placeholder="Duración" className={`${fieldClass} w-24`} />{editing && <button onClick={() => setForm((c) => ({ ...c, temario: c.temario.filter((_, i) => i !== index) }))} className="text-red-400"><Trash2 className="h-4 w-4" /></button>}</div>)}</div> : <div className="space-y-2">{form.expositores.map((item, index) => <div key={index} className="flex gap-2"><input value={item.nombre} disabled={!editing} onChange={(e) => setForm((c) => ({ ...c, expositores: c.expositores.map((row, i) => i === index ? { ...row, nombre: e.target.value } : row) }))} placeholder="Nombre" className={`${fieldClass} flex-1`} /><input value={item.cargo} disabled={!editing} onChange={(e) => setForm((c) => ({ ...c, expositores: c.expositores.map((row, i) => i === index ? { ...row, cargo: e.target.value } : row) }))} placeholder="Cargo" className={`${fieldClass} flex-1`} />{editing && <button onClick={() => setForm((c) => ({ ...c, expositores: c.expositores.filter((_, i) => i !== index) }))} className="text-red-400"><Trash2 className="h-4 w-4" /></button>}</div>)}</div>}
-        {member && <div className="mt-5 flex flex-wrap gap-2">{editing ? <><button onClick={() => addRow(tab)} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300"><Plus className="mr-1 inline h-4 w-4" />Agregar fila</button><button onClick={() => save(false)} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">Guardar borrador</button><button onClick={() => save(true)} className="rounded-lg bg-electric-orange px-3 py-2 text-sm font-semibold text-white">Publicar</button></> : <button onClick={() => setEditing(true)} className="rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Pencil className="mr-1 inline h-4 w-4" />Editar capacitación</button>}</div>}
-        {entity ? <EntityFiles section="capacitaciones" entity={entity} member={member} onChange={() => reload()} /> : <p className="mt-5 text-xs text-gray-500">Guarda o publica la capacitación para habilitar la carga de archivos.</p>}
-        {message && <p className="mt-3 text-xs text-gray-400">{message}</p>}
+    const visible = trainings.map((training, index) => ({ training, index })).filter(({ index }) => Math.abs(index - centerIndex) <= 1);
+    return <ModalWrapper onClose={onClose}>
+        <ModalHeader title="Capacitaciones" subtitle="Explora cada capacitación y abre sus detalles" onClose={onClose} />
+        {member && <div className="mb-4 flex flex-wrap gap-2"><button onClick={() => { setCreating(true); setEditing(null); }} className="flex items-center gap-2 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Plus className="h-4 w-4" />Nueva capacitación</button></div>}
+        {creating && <TrainingForm onSave={(training) => save(training, true)} onCancel={() => setCreating(false)} />}
+        {editing && <TrainingForm training={editing} onSave={(training) => save(training, true)} onCancel={() => setEditing(null)} />}
+        <div className="relative mt-5 flex min-h-[430px] items-center justify-center overflow-hidden px-8 sm:px-14">
+            <button onClick={() => setCenterIndex((index) => (index - 1 + trainings.length) % trainings.length)} className="absolute left-0 z-10 rounded-full border border-white/10 bg-white/5 p-2 text-white"><span className="sr-only">Anterior</span>‹</button>
+            <div className="relative h-[360px] w-full max-w-[760px]">
+                <AnimatePresence initial={false}>
+                    {visible.map(({ training, index }) => {
+                        const offset = index - centerIndex;
+                        const isCenter = offset === 0;
+                        const image = training.files.find((file) => file.mimeType.startsWith('image/'));
+                        return <motion.button key={training.id || training.title} onClick={() => isCenter ? setSelected(index) : setCenterIndex(index)} animate={{ x: `${offset * (isCenter ? 0 : 42)}%`, scale: isCenter ? 1 : .72, opacity: isCenter ? 1 : .45, zIndex: isCenter ? 2 : 1 }} className="absolute left-1/2 top-1/2 flex w-[min(78vw,360px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#111722] text-left shadow-2xl">
+                            <div className="min-h-[76px] p-4 pb-3"><h4 className="line-clamp-1 text-lg font-bold text-white">{training.title}</h4><p className="mt-1 line-clamp-2 text-sm text-gray-400">{training.subtitle}</p></div>
+                            {image ? <img src={image.url} alt={training.title} className="h-56 w-full object-cover" /> : <div className="flex h-56 items-center justify-center bg-gradient-to-br from-electric-orange/20 to-blue-500/10 text-sm text-gray-400">Sin imagen</div>}
+                        </motion.button>;
+                    })}
+                </AnimatePresence>
+            </div>
+            <button onClick={() => setCenterIndex((index) => (index + 1) % trainings.length)} className="absolute right-0 z-10 rounded-full border border-white/10 bg-white/5 p-2 text-white"><span className="sr-only">Siguiente</span>›</button>
+        </div>
+        <div className="flex justify-center gap-2">{trainings.map((training, index) => <button key={training.id || index} onClick={() => setCenterIndex(index)} className={`h-2 rounded-full transition-all ${centerIndex === index ? 'w-6 bg-electric-orange' : 'w-2 bg-white/30'}`} aria-label={`Ver ${training.title}`} />)}</div>
+        {selected !== null && trainings[selected] && <TrainingDetail training={trainings[selected]} entity={entities.find((entity) => entity.id === trainings[selected].id)} member={member} onClose={() => setSelected(null)} onEdit={() => { setEditing(trainings[selected]); setSelected(null); }} onFilesChange={reload} />}
+        {message && <p className="mt-3 text-center text-xs text-gray-400">{message}</p>}
+        {loading && <p className="text-center text-xs text-gray-500">Cargando capacitaciones...</p>}
     </ModalWrapper>;
 }
 

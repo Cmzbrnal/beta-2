@@ -11,6 +11,17 @@ function errorResponse(message: string, status = 400) {
     return NextResponse.json({ success: false, message }, { status });
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof Error) return error.message;
+    if (error && typeof error === 'object') {
+        const details = error as { message?: string; details?: string; hint?: string; code?: string };
+        return [details.message, details.details, details.hint, details.code ? `Código: ${details.code}` : '']
+            .filter(Boolean)
+            .join(' — ') || fallback;
+    }
+    return fallback;
+}
+
 function getMember(request: NextRequest) {
     return readMemberSession(request.cookies.get(MEMBER_SESSION_COOKIE)?.value);
 }
@@ -53,7 +64,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, projects });
     } catch (error) {
         console.error('Error consultando proyectos:', error);
-        return errorResponse(error instanceof Error ? error.message : 'No se pudieron cargar los proyectos.', 502);
+        return errorResponse(getErrorMessage(error, 'No se pudieron cargar los proyectos.'), 502);
     }
 }
 
@@ -173,6 +184,6 @@ export async function POST(request: NextRequest) {
         return errorResponse('Acción no reconocida.');
     } catch (error) {
         console.error('Error guardando proyecto:', error);
-        return errorResponse(error instanceof Error ? error.message : 'No se pudo guardar el proyecto.', 502);
+        return errorResponse(getErrorMessage(error, 'No se pudo guardar el proyecto.'), 502);
     }
 }

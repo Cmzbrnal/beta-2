@@ -14,6 +14,17 @@ function jsonError(message: string, status = 502) {
     return NextResponse.json({ success: false, message }, { status });
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof Error) return error.message;
+    if (error && typeof error === 'object') {
+        const details = error as { message?: string; details?: string; hint?: string; code?: string };
+        return [details.message, details.details, details.hint, details.code ? `Código: ${details.code}` : '']
+            .filter(Boolean)
+            .join(' — ') || fallback;
+    }
+    return fallback;
+}
+
 function cleanPathPart(value: string) {
     return value.trim().replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 80) || 'general';
 }
@@ -59,7 +70,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, content: data?.content || {} });
     } catch (error) {
         console.error('Error consultando contenido en Supabase:', error);
-        return jsonError(error instanceof Error ? error.message : 'Error consultando contenido.');
+        return jsonError(getErrorMessage(error, 'Error consultando contenido.'));
     }
 }
 
@@ -171,6 +182,6 @@ export async function POST(request: NextRequest) {
         return jsonError('Acción no reconocida.', 400);
     } catch (error) {
         console.error('Error guardando contenido en Supabase:', error);
-        return jsonError(error instanceof Error ? error.message : 'Error guardando contenido.');
+        return jsonError(getErrorMessage(error, 'Error guardando contenido.'));
     }
 }

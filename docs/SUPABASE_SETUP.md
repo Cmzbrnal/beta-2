@@ -10,7 +10,7 @@ El script crea:
 
 - `content_entries`: notas y contenido editable.
 - `content_files`: metadatos de archivos.
-- Bucket público `cipro-content`: PDF e imágenes.
+- Bucket público `contenido-publico`: PDF e imágenes.
 - `projects`: proyectos publicados y borradores de miembros.
 - Bucket público `contenido-publico`: imágenes de proyectos.
 

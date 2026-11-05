@@ -126,6 +126,15 @@ export async function POST(request: NextRequest) {
             if (!entityId || !fileName || !base64 || !ALLOWED_MIME_TYPES.has(mimeType)) {
                 return responseError('Selecciona un PDF o imagen válido.');
             }
+            const { data: ownedEntity, error: entityError } = await supabase
+                .from('content_entities')
+                .select('id')
+                .eq('id', entityId)
+                .eq('section', section)
+                .eq('created_by', member.codigoUni)
+                .maybeSingle();
+            if (entityError) throw entityError;
+            if (!ownedEntity) return responseError('No tienes permiso para modificar este contenido.', 403);
 
             const buffer = Buffer.from(base64, 'base64');
             if (buffer.byteLength > MAX_FILE_SIZE) return responseError('El archivo no puede superar 8 MB.');

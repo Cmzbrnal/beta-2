@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, X } from 'lucide-react';
 import BenefitCard from '@/components/ui/benefit-card';
+import SectionContentFiles from '@/components/SectionContentFiles';
 
 // ─── Datos base de las tarjetas ───────────────────────────────────────────────
 const benefits = [
@@ -50,7 +51,7 @@ const eventosPasados = [
     { fecha: "Ene 2025", nombre: "Design Thinking Sprint", tipo: "Intensivo", lugar: "Auditorio Facultad" },
 ];
 
-function EventosModal({ onClose }: { onClose: () => void }) {
+function EventosModal({ onClose, member }: { onClose: () => void; member?: any }) {
     const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
     const eventos = activeTab === 'proximos' ? eventosProximos : eventosPasados;
 
@@ -104,6 +105,7 @@ function EventosModal({ onClose }: { onClose: () => void }) {
             <p className="text-[11px] text-gray-600 text-center mt-4">
                 📌 Información actualizada por la directiva de CIPRO. Los detalles pueden cambiar.
             </p>
+            <SectionContentFiles section="eventos" title="Eventos Exclusivos" member={member} />
         </ModalWrapper>
     );
 }
@@ -131,7 +133,7 @@ const materiales = [
 
 type CapTab = 'temario' | 'expositores' | 'material';
 
-function CapacitacionesModal({ onClose }: { onClose: () => void }) {
+function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?: any }) {
     const [activeTab, setActiveTab] = useState<CapTab>('temario');
 
     const tabs: { key: CapTab; label: string }[] = [
@@ -228,6 +230,7 @@ function CapacitacionesModal({ onClose }: { onClose: () => void }) {
                     </motion.div>
                 )}
             </AnimatePresence>
+            <SectionContentFiles section="capacitaciones" title="Programa de Capacitaciones" member={member} />
         </ModalWrapper>
     );
 }
@@ -335,10 +338,10 @@ export default function BenefitsSection({ member, onAccessRestrictedResource }: 
             {/* Modals */}
             <AnimatePresence>
                 {openModal === 'eventos' && (
-                    <EventosModal key="eventos" onClose={() => setOpenModal(null)} />
+                    <EventosModal key="eventos" member={member} onClose={() => setOpenModal(null)} />
                 )}
                 {openModal === 'capacitaciones' && (
-                    <CapacitacionesModal key="capacitaciones" onClose={() => setOpenModal(null)} />
+                    <CapacitacionesModal key="capacitaciones" member={member} onClose={() => setOpenModal(null)} />
                 )}
             </AnimatePresence>
         </section>

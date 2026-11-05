@@ -168,6 +168,27 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        if (action === 'delete') {
+            const id = String(body.id || '');
+            if (!id) return responseError('Falta el contenido que deseas eliminar.');
+            const { data: entity, error: findError } = await supabase
+                .from('content_entities')
+                .select('id')
+                .eq('id', id)
+                .eq('section', section)
+                .eq('created_by', member.codigoUni)
+                .maybeSingle();
+            if (findError) throw findError;
+            if (!entity) return responseError('No tienes permiso para eliminar este contenido.', 403);
+            const { error } = await supabase
+                .from('content_entities')
+                .delete()
+                .eq('id', id)
+                .eq('created_by', member.codigoUni);
+            if (error) throw error;
+            return NextResponse.json({ success: true });
+        }
+
         return responseError('Acción no reconocida.');
     } catch (error) {
         console.error('Error guardando entidad de contenido:', error);

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { FileText, Image as ImageIcon, Save, Upload } from 'lucide-react';
+import { Eye, FileText, Image as ImageIcon, Save, Upload } from 'lucide-react';
 
 type Section = 'biblioteca' | 'eventos' | 'capacitaciones';
 
@@ -180,10 +180,15 @@ export default function SectionContentFiles({
             {files.length > 0 && (
                 <div className="mt-3 space-y-2">
                     {files.map((file) => (
-                        <a key={file.id} href={file.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-2 text-sm text-blue-300 hover:underline">
-                            {file.mimeType.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-                            <span className="truncate">{file.name}</span>
-                        </a>
+                        <div key={file.id} className="flex items-center justify-between gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 p-2 text-sm">
+                            <a href={file.mimeType === 'application/pdf' ? `${file.url}#page=1` : file.url} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-2 text-blue-300 hover:underline">
+                                {file.mimeType.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                                <span className="truncate">{file.name}</span>
+                            </a>
+                            <a href={file.mimeType === 'application/pdf' ? `${file.url}#page=1` : file.url} target="_blank" rel="noreferrer" title="Vista previa" className="text-blue-300 hover:text-white">
+                                <Eye className="h-4 w-4" />
+                            </a>
+                        </div>
                     ))}
                 </div>
             )}

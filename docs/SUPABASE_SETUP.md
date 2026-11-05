@@ -11,6 +11,8 @@ El script crea:
 - `content_entries`: notas y contenido editable.
 - `content_files`: metadatos de archivos.
 - Bucket público `cipro-content`: PDF e imágenes.
+- `projects`: proyectos publicados y borradores de miembros.
+- Bucket público `contenido-publico`: imágenes de proyectos.
 
 ## 2. Variables de entorno en Vercel
 
@@ -24,6 +26,10 @@ SUPABASE_SERVICE_ROLE_KEY=pega_aqui_la_service_role_key
 La `service_role key` se obtiene en **Project Settings → API**. Nunca la pongas en componentes `use client`, GitHub, ni en una variable que empiece por `NEXT_PUBLIC_`.
 
 Después de guardar las variables, ejecuta un nuevo redeploy en Vercel.
+
+Para habilitar proyectos dinámicos, ejecuta también la sección `projects` del archivo
+[`../supabase/schema.sql`](../supabase/schema.sql) en el SQL Editor. Los miembros podrán
+subir una imagen, guardar un borrador, previsualizarlo y publicarlo con confirmación.
 
 ## 3. Qué permanece en Google Sheets
 

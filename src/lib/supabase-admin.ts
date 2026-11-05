@@ -45,6 +45,32 @@ export type Database = {
                 Update: Partial<Database['public']['Tables']['content_files']['Insert']>;
                 Relationships: [];
             };
+            projects: {
+                Row: {
+                    id: string;
+                    title: string;
+                    description: string;
+                    image_url: string;
+                    content: Record<string, unknown>;
+                    status: 'draft' | 'published';
+                    created_by: string;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    title: string;
+                    description: string;
+                    image_url: string;
+                    content?: Record<string, unknown>;
+                    status?: 'draft' | 'published';
+                    created_by: string;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['projects']['Insert']>;
+                Relationships: [];
+            };
         };
         Views: Record<string, never>;
         Functions: Record<string, never>;

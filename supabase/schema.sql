@@ -29,3 +29,18 @@ alter table public.content_files enable row level security;
 
 revoke all on public.content_entries from anon, authenticated;
 revoke all on public.content_files from anon, authenticated;
+
+create table if not exists public.projects (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text not null,
+  image_url text not null,
+  content jsonb not null default '{}'::jsonb,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  created_by text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.projects enable row level security;
+revoke all on public.projects from anon, authenticated;

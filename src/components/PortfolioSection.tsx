@@ -5,7 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, X, Upload, FileText, Save, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const projects = [
+type Project = {
+    id?: string;
+    title: string;
+    description: string;
+    image: string;
+    contexto: string;
+    solucion: string;
+    anexos: { name: string; ext: string }[];
+    status?: 'draft' | 'published';
+};
+
+const defaultProjects: Project[] = [
     {
         title: "Ingeniero Locaso",
         description: "Sistema automatizado de gestión académica con IA.",
@@ -71,10 +82,12 @@ interface PortfolioSectionProps {
 function ProjectModal({
     project,
     member,
+    onEdit,
     onClose,
 }: {
-    project: typeof projects[0];
+    project: Project;
     member?: any;
+    onEdit?: () => void;
     onClose: () => void;
 }) {
     const [notes, setNotes] = useState({ contexto: '', solucion: '' });
@@ -231,6 +244,14 @@ function ProjectModal({
                     >
                         <X className="w-4 h-4" />
                     </button>
+                    {member && onEdit && (
+                        <button
+                            onClick={onEdit}
+                            className="absolute top-4 right-14 rounded-lg border border-electric-orange/30 bg-black/50 px-3 py-1.5 text-xs text-electric-orange hover:bg-electric-orange/10"
+                        >
+                            Editar
+                        </button>
+                    )}
                 </div>
 
                 {/* Scrollable content */}
@@ -327,12 +348,175 @@ function ProjectModal({
     );
 }
 
+function ProjectEditor({
+    member,
+    project,
+    onSaved,
+    onClose,
+}: {
+    member: any;
+    project?: Project;
+    onSaved: (project: Project) => void;
+    onClose: () => void;
+}) {
+    const [form, setForm] = useState({
+        title: project?.title || '',
+        description: project?.description || '',
+        imageUrl: project?.image || '',
+        contexto: project?.contexto || '',
+        solucion: project?.solucion || '',
+    });
+    const [preview, setPreview] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const imageInputRef = useRef<HTMLInputElement>(null);
+
+    const update = (key: keyof typeof form, value: string) => {
+        setForm((current) => ({ ...current, [key]: value }));
+    };
+
+    const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+            setMessage('Usa PNG, JPG, WEBP o GIF de máximo 5 MB.');
+            return;
+        }
+
+        try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+                reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+                reader.readAsDataURL(file);
+            });
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'uploadImage', fileName: file.name, mimeType: file.type, base64 })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            update('imageUrl', data.imageUrl);
+            setMessage('Imagen cargada.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudo cargar la imagen.');
+        }
+    };
+
+    const save = async (publish: boolean) => {
+        if (!form.title.trim() || !form.description.trim() || !form.imageUrl) {
+            setMessage('Completa título, descripción e imagen.');
+            return;
+        }
+        if (publish && !window.confirm('¿Seguro que deseas publicar este proyecto?')) return;
+        setSaving(true);
+        setMessage('');
+        try {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: publish ? 'publish' : 'save',
+                    id: project?.id,
+                    title: form.title,
+                    description: form.description,
+                    imageUrl: form.imageUrl,
+                    contexto: form.contexto,
+                    solucion: form.solucion,
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            const saved = data.project;
+            onSaved({
+                id: saved.id,
+                title: saved.title,
+                description: saved.description,
+                image: saved.image_url,
+                contexto: saved.content?.contexto || '',
+                solucion: saved.content?.solucion || '',
+                anexos: saved.content?.anexos || [],
+                status: saved.status,
+            });
+            setMessage(publish ? 'Proyecto publicado.' : 'Borrador guardado.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudo guardar el proyecto.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <motion.div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={onClose}>
+            <motion.div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0B0F17] p-6" onClick={(event) => event.stopPropagation()}>
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-white">{project ? 'Editar proyecto' : 'Nuevo proyecto'}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
+                </div>
+                {preview ? (
+                    <div className="space-y-5">
+                        {form.imageUrl && <img src={form.imageUrl} alt={form.title} className="w-full h-56 object-cover rounded-xl" />}
+                        <h4 className="text-2xl font-bold text-white">{form.title || 'Sin título'}</h4>
+                        <p className="text-gray-300">{form.description}</p>
+                        <div className="rounded-xl border border-white/10 p-4"><h5 className="text-electric-orange uppercase text-sm font-bold mb-2">Contexto / Problemática</h5><p className="text-gray-300">{form.contexto}</p></div>
+                        <div className="rounded-xl border border-white/10 p-4"><h5 className="text-electric-orange uppercase text-sm font-bold mb-2">Solución desarrollada</h5><p className="text-gray-300">{form.solucion}</p></div>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {(['title', 'description', 'contexto', 'solucion'] as const).map((field) => (
+                            <label key={field} className="block text-sm text-gray-400">
+                                {field === 'title' ? 'Título' : field === 'description' ? 'Descripción corta' : field === 'contexto' ? 'Contexto / Problemática' : 'Solución desarrollada'}
+                                <textarea value={form[field]} onChange={(event) => update(field, event.target.value)} rows={field === 'title' ? 1 : 4} className="mt-1 w-full rounded-lg border border-white/10 bg-white/5 p-3 text-white outline-none focus:border-electric-orange/50" />
+                            </label>
+                        ))}
+                        <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadImage} className="hidden" />
+                        <button onClick={() => imageInputRef.current?.click()} className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300">Subir imagen</button>
+                        {form.imageUrl && <img src={form.imageUrl} alt="Vista previa" className="h-32 w-full rounded-lg object-cover" />}
+                    </div>
+                )}
+                {message && <p className="mt-4 text-sm text-gray-400">{message}</p>}
+                <div className="mt-6 flex flex-wrap gap-2">
+                    <button onClick={() => setPreview((value) => !value)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white">{preview ? 'Volver a editar' : 'Previsualizar'}</button>
+                    <button onClick={() => save(false)} disabled={saving} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300">{saving ? 'Guardando...' : 'Guardar borrador'}</button>
+                    <button onClick={() => save(true)} disabled={saving} className="rounded-lg bg-electric-orange px-4 py-2 text-sm font-semibold text-white">Publicar</button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 // ─── Main Section ─────────────────────────────────────────────────────────────
 export default function PortfolioSection({ member }: PortfolioSectionProps) {
+    const [projectList, setProjectList] = useState<Project[]>(defaultProjects);
     const [centerIndex, setCenterIndex] = useState(0);
     const [isMobile, setIsMobile] = useState(false);
     const [selectedProject, setSelectedProject] = useState<number | null>(null);
-    const totalProjects = projects.length;
+    const [editingProject, setEditingProject] = useState<Project | null | undefined>(undefined);
+    const totalProjects = projectList.length;
+
+    useEffect(() => {
+        fetch('/api/projects')
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success && data.projects?.length) {
+                    const remoteProjects = data.projects.map((project: any) => ({
+                        id: project.id,
+                        title: project.title,
+                        description: project.description,
+                        image: project.image_url,
+                        contexto: project.content?.contexto || '',
+                        solucion: project.content?.solucion || '',
+                        anexos: project.content?.anexos || [],
+                        status: project.status,
+                    }));
+                    const remoteTitles = new Set(remoteProjects.map((project: Project) => project.title));
+                    setProjectList([...defaultProjects.filter((project) => !remoteTitles.has(project.title)), ...remoteProjects]);
+                }
+            })
+            .catch(() => undefined);
+    }, [member?.codigoUni]);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -371,7 +555,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
         return positions.map(offset => {
             const actualIndex = getWrappedIndex(centerIndex + offset);
             return {
-                project: projects[actualIndex],
+                project: projectList[actualIndex],
                 actualIndex,
                 offset,
             };
@@ -518,7 +702,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
 
                 {/* Dots indicator */}
                 <div className="flex justify-center gap-2 mt-10">
-                    {projects.map((_, index) => (
+                    {projectList.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => goToSlide(index)}
@@ -531,6 +715,14 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                         />
                     ))}
                 </div>
+
+                {member && (
+                    <div className="mt-8 flex justify-center">
+                        <button onClick={() => setEditingProject(null)} className="rounded-full bg-electric-orange px-5 py-2 text-sm font-semibold text-white hover:bg-orange-500">
+                            + Nuevo proyecto
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Project Modal */}
@@ -538,9 +730,31 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                 {selectedProject !== null && (
                     <ProjectModal
                         key={selectedProject}
-                        project={projects[selectedProject]}
+                        project={projectList[selectedProject]}
                         member={member}
+                        onEdit={() => {
+                            setEditingProject(projectList[selectedProject]);
+                            setSelectedProject(null);
+                        }}
                         onClose={() => setSelectedProject(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {editingProject !== undefined && member && (
+                    <ProjectEditor
+                        member={member}
+                        project={editingProject || undefined}
+                        onClose={() => setEditingProject(undefined)}
+                        onSaved={(saved) => {
+                            setProjectList((current) => {
+                                const index = current.findIndex((item) => item.id === saved.id);
+                                if (index < 0) return [...current, saved];
+                                return current.map((item, itemIndex) => itemIndex === index ? saved : item);
+                            });
+                            setEditingProject(undefined);
+                        }}
                     />
                 )}
             </AnimatePresence>

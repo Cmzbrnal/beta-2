@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { createMemberSession, MEMBER_SESSION_COOKIE } from '@/lib/member-session';
 
 const DATA_FILE = path.join(process.cwd(), 'src', 'data', 'miembros.json');
 
@@ -11,6 +12,33 @@ interface LocalMember {
     carrera: string;
     ciclo: string;
     estado?: string;
+}
+
+function successResponse(member: Omit<LocalMember, 'password'>) {
+    const response = NextResponse.json({
+        success: true,
+        member: {
+            codigoUni: member.codigoUni,
+            nombres: member.nombres,
+            carrera: member.carrera,
+            ciclo: member.ciclo,
+            estado: member.estado || 'Miembro'
+        }
+    });
+    response.cookies.set(MEMBER_SESSION_COOKIE, createMemberSession({
+        codigoUni: member.codigoUni,
+        nombres: member.nombres,
+        carrera: member.carrera,
+        ciclo: member.ciclo,
+        estado: member.estado || 'Miembro'
+    }), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7
+    });
+    return response;
 }
 
 export async function POST(request: NextRequest) {
@@ -42,15 +70,12 @@ export async function POST(request: NextRequest) {
                 const sheetData = await sheetRes.json();
                 if (sheetData.success && sheetData.member) {
                     if (sheetData.member.password === password) {
-                        return NextResponse.json({
-                            success: true,
-                            member: {
-                                codigoUni: sheetData.member.codigoUni,
-                                nombres: sheetData.member.nombres,
-                                carrera: sheetData.member.carrera,
-                                ciclo: sheetData.member.ciclo,
-                                estado: sheetData.member.estado || 'Miembro'
-                            }
+                        return successResponse({
+                            codigoUni: sheetData.member.codigoUni,
+                            nombres: sheetData.member.nombres,
+                            carrera: sheetData.member.carrera,
+                            ciclo: sheetData.member.ciclo,
+                            estado: sheetData.member.estado || 'Miembro'
                         });
                     } else {
                         return NextResponse.json(
@@ -80,16 +105,7 @@ export async function POST(request: NextRequest) {
             );
 
             if (miembro && miembro.password === password) {
-                return NextResponse.json({
-                    success: true,
-                    member: {
-                        codigoUni: miembro.codigoUni,
-                        nombres: miembro.nombres,
-                        carrera: miembro.carrera,
-                        ciclo: miembro.ciclo,
-                        estado: miembro.estado || 'Miembro'
-                    }
-                });
+                return successResponse(miembro);
             }
         }
 

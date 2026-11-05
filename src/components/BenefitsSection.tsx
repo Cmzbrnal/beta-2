@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, X } from 'lucide-react';
 import BenefitCard from '@/components/ui/benefit-card';
@@ -50,10 +50,10 @@ const eventosPasados = [
     { fecha: "Mar 2025", nombre: "Introducción a PMI y PMBOK 7", tipo: "Workshop", lugar: "Sala técnica UNI" },
     { fecha: "Ene 2025", nombre: "Design Thinking Sprint", tipo: "Intensivo", lugar: "Auditorio Facultad" },
 ];
+const eventosDefaults: SectionContent = { proximos: eventosProximos, pasados: eventosPasados };
 
 function EventosModal({ onClose, member }: { onClose: () => void; member?: any }) {
     const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
-    const eventos = activeTab === 'proximos' ? eventosProximos : eventosPasados;
 
     return (
         <ModalWrapper onClose={onClose}>
@@ -76,35 +76,35 @@ function EventosModal({ onClose, member }: { onClose: () => void; member?: any }
                 ))}
             </div>
 
-            {/* Event list */}
-            <div className="space-y-3 mb-4">
-                {eventos.map((ev, i) => (
-                    <div
-                        key={i}
-                        className="flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-electric-orange/20 transition-all"
-                    >
-                        <div className="w-10 h-10 rounded-xl bg-electric-orange/10 border border-electric-orange/20 flex items-center justify-center flex-shrink-0 text-electric-orange font-bold text-sm">
-                            {String(i + 1).padStart(2, '0')}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-white font-semibold text-sm">{ev.nombre}</p>
-                            <p className="text-gray-500 text-xs mt-0.5">📍 {ev.lugar}</p>
-                            <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border text-gray-300 border-white/10 bg-white/5">
-                                    {ev.fecha}
-                                </span>
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${typeColors[ev.tipo] ?? 'text-gray-400 border-white/10 bg-white/5'}`}>
-                                    {ev.tipo}
-                                </span>
+            <SectionPresetEditor section="eventos" title="Eventos Exclusivos" defaults={eventosDefaults} member={member}>
+                {(content) => {
+                    const proximos = Array.isArray(content.proximos) ? content.proximos as typeof eventosProximos : eventosProximos;
+                    const pasados = Array.isArray(content.pasados) ? content.pasados as typeof eventosPasados : eventosPasados;
+                    const eventos = activeTab === 'proximos' ? proximos : pasados;
+                    return (
+                        <>
+                            <div className="space-y-3 mb-4">
+                                {eventos.map((ev, i) => (
+                                    <div key={i} className="flex items-start gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:border-electric-orange/20 transition-all">
+                                        <div className="w-10 h-10 rounded-xl bg-electric-orange/10 border border-electric-orange/20 flex items-center justify-center flex-shrink-0 text-electric-orange font-bold text-sm">
+                                            {String(i + 1).padStart(2, '0')}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white font-semibold text-sm">{ev.nombre}</p>
+                                            <p className="text-gray-500 text-xs mt-0.5">📍 {ev.lugar}</p>
+                                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border text-gray-300 border-white/10 bg-white/5">{ev.fecha}</span>
+                                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${typeColors[ev.tipo] ?? 'text-gray-400 border-white/10 bg-white/5'}`}>{ev.tipo}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <p className="text-[11px] text-gray-600 text-center mt-4">
-                📌 Información actualizada por la directiva de CIPRO. Los detalles pueden cambiar.
-            </p>
+                            <p className="text-[11px] text-gray-600 text-center mt-4">📌 Información actualizada por la directiva de CIPRO. Los detalles pueden cambiar.</p>
+                        </>
+                    );
+                }}
+            </SectionPresetEditor>
             <SectionContentFiles section="eventos" title="Eventos Exclusivos" member={member} />
         </ModalWrapper>
     );
@@ -130,8 +130,106 @@ const materiales = [
     { nombre: "Ejercicios Scrum", ext: "PDF" },
     { nombre: "Template Kanban Board", ext: "XLSX" },
 ];
+const capacitacionesDefaults: SectionContent = { temario, expositores, materiales };
 
 type CapTab = 'temario' | 'expositores' | 'material';
+type SectionContent = Record<string, unknown>;
+
+function SectionPresetEditor({
+    section,
+    title,
+    defaults,
+    member,
+    children,
+}: {
+    section: 'eventos' | 'capacitaciones';
+    title: string;
+    defaults: SectionContent;
+    member?: any;
+    children: (content: SectionContent, editing: boolean, update: (value: SectionContent) => void) => React.ReactNode;
+}) {
+    const [content, setContent] = useState<SectionContent>(defaults);
+    const [entityId, setEntityId] = useState('');
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState('');
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        const status = member?.codigoUni ? 'all' : 'published';
+        fetch(`/api/content-entities?section=${section}&status=${status}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (!data.success) throw new Error(data.message);
+                const entity = data.entities?.find((item: any) =>
+                    item.title === title && (!member?.codigoUni || item.created_by === member.codigoUni)
+                );
+                if (entity) {
+                    setEntityId(entity.id);
+                    setContent(entity.content || defaults);
+                }
+            })
+            .catch(() => undefined);
+    }, [section, title, member?.codigoUni]);
+
+    const startEditing = () => {
+        setDraft(JSON.stringify(content, null, 2));
+        setEditing(true);
+        setMessage('');
+    };
+
+    const save = async (publish: boolean) => {
+        if (!member?.codigoUni) return;
+        try {
+            const parsed = JSON.parse(draft) as SectionContent;
+            const response = await fetch('/api/content-entities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: publish ? 'publish' : 'save',
+                    id: entityId || undefined,
+                    section,
+                    title,
+                    description: '',
+                    content: parsed,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            setEntityId(data.entity.id);
+            setContent(parsed);
+            setEditing(false);
+            setMessage(publish ? 'Contenido publicado.' : 'Borrador guardado.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'El contenido debe tener formato JSON válido.');
+        }
+    };
+
+    return (
+        <>
+            {children(content, editing, setContent)}
+            {member && (
+                <div className="mt-4 border-t border-white/10 pt-4">
+                    {!editing ? (
+                        <button onClick={startEditing} className="rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-4 py-2 text-sm text-electric-orange">
+                            Editar contenido predeterminado
+                        </button>
+                    ) : (
+                        <>
+                            <p className="mb-2 text-xs text-gray-500">Edita los datos predeterminados en formato JSON. Puedes cambiar textos, fechas, lugares y materiales.</p>
+                            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={12} className="w-full rounded-lg border border-white/10 bg-white/5 p-3 font-mono text-xs text-white outline-none focus:border-electric-orange/50" />
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                <button onClick={() => save(false)} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">Guardar borrador</button>
+                                <button onClick={() => save(true)} className="rounded-lg bg-electric-orange px-3 py-2 text-sm font-semibold text-white">Publicar cambios</button>
+                                <button onClick={() => setEditing(false)} className="rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300">Cancelar</button>
+                            </div>
+                        </>
+                    )}
+                    {message && <p className="mt-2 text-xs text-gray-400">{message}</p>}
+                </div>
+            )}
+        </>
+    );
+}
 
 function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?: any }) {
     const [activeTab, setActiveTab] = useState<CapTab>('temario');
@@ -163,8 +261,12 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
                 ))}
             </div>
 
-            {/* Tab content */}
-            <AnimatePresence mode="wait">
+            <SectionPresetEditor section="capacitaciones" title="Programa de Capacitaciones" defaults={capacitacionesDefaults} member={member}>
+                {(content) => {
+                    const currentTemario = Array.isArray(content.temario) ? content.temario as typeof temario : temario;
+                    const currentExpositores = Array.isArray(content.expositores) ? content.expositores as typeof expositores : expositores;
+                    const currentMateriales = Array.isArray(content.materiales) ? content.materiales as typeof materiales : materiales;
+                    return <AnimatePresence mode="wait">
                 {activeTab === 'temario' && (
                     <motion.div
                         key="temario"
@@ -173,7 +275,7 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
                         exit={{ opacity: 0, y: -8 }}
                         className="space-y-2"
                     >
-                        {temario.map((item, i) => (
+                        {currentTemario.map((item, i) => (
                             <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02] hover:border-electric-orange/20 transition-all">
                                 <div className="flex items-center gap-3">
                                     <span className="text-electric-orange text-sm font-bold w-6">{String(i + 1).padStart(2, '0')}</span>
@@ -195,7 +297,7 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
                         exit={{ opacity: 0, y: -8 }}
                         className="space-y-3"
                     >
-                        {expositores.map((exp, i) => (
+                        {currentExpositores.map((exp, i) => (
                             <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02]">
                                 <div className="w-10 h-10 rounded-full bg-electric-orange/10 border border-electric-orange/20 flex items-center justify-center text-electric-orange font-bold text-sm flex-shrink-0">
                                     {exp.nombre.charAt(0)}
@@ -217,7 +319,7 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
                         exit={{ opacity: 0, y: -8 }}
                         className="space-y-2"
                     >
-                        {materiales.map((mat, i) => (
+                        {currentMateriales.map((mat, i) => (
                             <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/[0.02]">
                                 <div className="flex items-center gap-2">
                                     <span className="text-gray-500 text-sm">📄</span>
@@ -229,7 +331,9 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
                         ))}
                     </motion.div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence>;
+                }}
+            </SectionPresetEditor>
             <SectionContentFiles section="capacitaciones" title="Programa de Capacitaciones" member={member} />
         </ModalWrapper>
     );

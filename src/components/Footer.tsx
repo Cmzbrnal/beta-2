@@ -28,10 +28,10 @@ export default function Footer({ onOpenModal }: FooterProps) {
                             <a href="https://github.com/20233999-collab/web-cipro" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all">
                                 <Github className="w-4 h-4" />
                             </a>
-                            <a href="https://www.linkedin.com/company/cipro-proyectos/posts/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all">
+                            <a href="https://www.linkedin.com/company/cipro-proyectos/posts/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de CIPRO" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all">
                                 <Linkedin className="w-4 h-4" />
                             </a>
-                            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all">
+                            <a href="https://www.instagram.com/cipro.proyectos?exln=ZTZsNmM5ODcyazV5" target="_blank" rel="noopener noreferrer" aria-label="Instagram de CIPRO" className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all">
                                 <Instagram className="w-4 h-4" />
                             </a>
                         </div>

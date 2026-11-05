@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Home, Github, Linkedin, Mail } from 'lucide-react';
+import { Home, Linkedin, Instagram, Mail } from 'lucide-react';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import { useState } from 'react';
 
 const dockItems = [
     { icon: Home, label: 'Inicio', href: '#' },
-    { icon: Github, label: 'GitHub', href: 'https://github.com' },
     { icon: Linkedin, label: 'LinkedIn', href: 'https://www.linkedin.com/company/cipro-proyectos/posts/' },
+    { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/cipro.proyectos?exln=ZTZsNmM5ODcyazV5' },
     { icon: Mail, label: 'Contacto', href: 'mailto:contacto@cipro.com' },
 ];
 

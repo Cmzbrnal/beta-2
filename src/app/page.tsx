@@ -26,7 +26,7 @@ export default function Home() {
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [currentMember, setCurrentMember] = useState<MemberData | null>(null);
 
-    // Mensaje de aviso cuando intentan entrar a la Biblioteca de Recursos
+    // Mensaje de aviso para recursos que requieren acceso de miembro
     const [loginNotice, setLoginNotice] = useState<{ title?: string; message?: string }>({});
 
     const handleLoginSuccess = (member: MemberData) => {
@@ -39,7 +39,7 @@ export default function Home() {
         setLoginNotice({});
     };
 
-    // Aviso al hacer clic en Biblioteca de Recursos
+    // Aviso al hacer clic en un recurso restringido
     const handleAccessRestrictedResource = (resourceName: string) => {
         if (!currentMember) {
             setLoginNotice({
@@ -80,10 +80,9 @@ export default function Home() {
                 {/* 3. Proyectos con Propósito: Carrusel 3D interactivo */}
                 <PortfolioSection member={currentMember} />
 
-                {/* 4. Más que una comunidad: Eventos, Recursos, Capacitaciones */}
+                {/* 4. Más que una comunidad: Eventos y Capacitaciones */}
                 <BenefitsSection
                     member={currentMember}
-                    onAccessRestrictedResource={handleAccessRestrictedResource}
                 />
 
                 {/* 4. Social Proof: +10 Años, +15 Proyectos, +45 Miembros (Captura 2) */}

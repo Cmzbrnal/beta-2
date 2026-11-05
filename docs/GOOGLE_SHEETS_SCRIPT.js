@@ -38,9 +38,11 @@ function ensureSheet(ss, name, headers, color) {
 }
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
   try {
+    lock.waitLock(10000);
     setupSheets();
-    const body = JSON.parse(e.postData.contents || '{}');
+    const body = JSON.parse((e.postData && e.postData.contents) || '{}');
 
     if (body.action === 'saveContent' || body.action === 'deleteContent') {
       return handleContent(body);
@@ -49,12 +51,18 @@ function doPost(e) {
       return handleFile(body);
     }
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.postulaciones);
     const data = body.data || body;
+    const requiredFields = ['codigoUni', 'nombres', 'correo', 'whatsapp', 'carrera', 'ciclo'];
+    if (requiredFields.some(field => !String(data[field] || '').trim())) {
+      return jsonResponse({ success: false, error: 'Faltan campos obligatorios' });
+    }
+
+    const now = new Date();
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEETS.postulaciones);
     sheet.appendRow([
-      data.id || `POST-${Date.now()}`,
-      data.fecha || Utilities.formatDate(new Date(), 'America/Lima', 'dd/MM/yyyy'),
-      data.hora || Utilities.formatDate(new Date(), 'America/Lima', 'HH:mm:ss'),
+      data.id || `POST-${now.getTime()}`,
+      data.fecha || Utilities.formatDate(now, 'America/Lima', 'dd/MM/yyyy'),
+      data.hora || Utilities.formatDate(now, 'America/Lima', 'HH:mm:ss'),
       data.codigoUni || '',
       data.nombres || '',
       data.correo || '',
@@ -63,9 +71,14 @@ function doPost(e) {
       data.ciclo || '',
       data.estado || 'Postulación'
     ]);
+
     return jsonResponse({ success: true, message: 'Postulación registrada en Google Sheets' });
   } catch (error) {
     return jsonResponse({ success: false, error: String(error) });
+  } finally {
+    if (lock.hasLock()) {
+      lock.releaseLock();
+    }
   }
 }
 
@@ -178,9 +191,16 @@ function doGet(e) {
         success: true,
         total: Math.max(values.length - 1, 0),
         postulaciones: values.slice(1).map(row => ({
-          id: row[0], fecha: row[1], hora: row[2], codigoUni: row[3],
-          nombres: row[4], correo: row[5], whatsapp: row[6],
-          carrera: row[7], ciclo: row[8], estado: row[9]
+          id: row[0],
+          fecha: row[1],
+          hora: row[2],
+          codigoUni: row[3],
+          nombres: row[4],
+          correo: row[5],
+          whatsapp: row[6],
+          carrera: row[7],
+          ciclo: row[8],
+          estado: row[9]
         }))
       });
     }

@@ -33,8 +33,15 @@ export default function PostulacionModal({ isOpen, onClose }: PostulacionModalPr
         e.preventDefault();
 
         // Validaciones
-        if (!formData.nombres || !formData.codigoUni || !formData.correo || !formData.whatsapp || !formData.carrera || !formData.ciclo) {
+        const normalizedEmail = formData.correo.trim().toLowerCase();
+        if (Object.values(formData).some((value) => !value.trim())) {
             setErrorMessage('Por favor completa todos los campos requeridos (*).');
+            setStatus('error');
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            setErrorMessage('Ingresa un correo válido, por ejemplo: nombre@gmail.com');
             setStatus('error');
             return;
         }
@@ -45,6 +52,12 @@ export default function PostulacionModal({ isOpen, onClose }: PostulacionModalPr
         const now = new Date();
         const payload = {
             ...formData,
+            nombres: formData.nombres.trim(),
+            codigoUni: formData.codigoUni.trim().toUpperCase(),
+            correo: normalizedEmail,
+            whatsapp: formData.whatsapp.trim(),
+            carrera: formData.carrera.trim(),
+            ciclo: formData.ciclo.trim(),
             fecha: now.toLocaleDateString('es-PE', { year: 'numeric', month: '2-digit', day: '2-digit' }),
             hora: now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
             estado: 'Postulación'
@@ -62,7 +75,10 @@ export default function PostulacionModal({ isOpen, onClose }: PostulacionModalPr
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Error al enviar la postulación');
+                throw new Error(
+                    [data.message, data.detail].filter(Boolean).join(' ') ||
+                    'Error al enviar la postulación'
+                );
             }
 
             setStatus('success');

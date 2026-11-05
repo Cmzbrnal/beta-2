@@ -22,56 +22,41 @@ const defaultProjects: Project[] = [
         title: "Ingeniero Locaso",
         description: "Sistema automatizado de gestión académica con IA.",
         image: "/imagenes/proyectos/ingeniero-locaso.png",
-        contexto: "Este proyecto surgió de la necesidad de automatizar procesos académicos que consumían tiempo excesivo. La gestión manual de notas, horarios y comunicados generaba errores frecuentes y una experiencia deficiente para alumnos y docentes.",
-        solucion: "Se implementó una plataforma inteligente con IA que centraliza la gestión académica, automatiza notificaciones, y ofrece dashboards en tiempo real. Se aplicó metodología Scrum con sprints de 2 semanas logrando un 70% de reducción en tiempos operativos.",
-        anexos: [
-            { name: "Charter del Proyecto", ext: "PDF" },
-            { name: "Informe Final", ext: "PDF" },
-        ],
+        contexto: "",
+        solucion: "",
+        anexos: [],
     },
     {
         title: "Transformación Digital",
         description: "Red de integración de datos para empresas en crecimiento.",
         image: "/imagenes/proyectos/transformacion-digital.png",
-        contexto: "Las empresas en expansión enfrentan silos de información que frenan su crecimiento. Los datos dispersos en múltiples sistemas generan decisiones lentas y costosas.",
-        solucion: "Diseñamos una arquitectura de integración de datos con APIs RESTful y un ETL robusto. Se usó Kanban para gestión visual del flujo, logrando integrar 5 sistemas core en 3 meses.",
-        anexos: [
-            { name: "Arquitectura de Solución", ext: "PDF" },
-            { name: "Plan de Implementación", ext: "XLSX" },
-        ],
+        contexto: "",
+        solucion: "",
+        anexos: [],
     },
     {
         title: "Gestión Ágil",
         description: "Visualización de flujos de trabajo con metodología Scrum.",
         image: "/imagenes/proyectos/gestion-agil.png",
-        contexto: "Equipos con baja visibilidad del avance real del proyecto y dificultad para detectar cuellos de botella a tiempo, resultando en entregas tardías.",
-        solucion: "Implementación de tableros Scrum físicos y digitales con métricas de velocity, burndown charts y retrospectivas estructuradas. Se logró una mejora del 45% en predictibilidad de entregas.",
-        anexos: [
-            { name: "Guía de Implementación Scrum", ext: "PDF" },
-            { name: "Tablero Kanban Template", ext: "XLSX" },
-        ],
+        contexto: "",
+        solucion: "",
+        anexos: [],
     },
     {
         title: "PMO Estratégica",
         description: "Oficina de proyectos con enfoque en entrega de valor.",
         image: "/imagenes/proyectos/pmo-estrategica.png",
-        contexto: "Organización con múltiples proyectos sin un ente centralizador, causando duplicación de esfuerzos, falta de estándares y baja alineación estratégica.",
-        solucion: "Constitución de una PMO con governance model, marcos de referencia estandarizados y KPIs de portafolio. Alineación de proyectos a objetivos estratégicos con OKRs trimestrales.",
-        anexos: [
-            { name: "PMO Charter", ext: "PDF" },
-            { name: "Governance Model", ext: "PDF" },
-        ],
+        contexto: "",
+        solucion: "",
+        anexos: [],
     },
     {
         title: "Optimización de Procesos",
         description: "Eficiencia y productividad a través de mejora continua.",
         image: "/imagenes/proyectos/optimizacion-procesos.png",
-        contexto: "Procesos operativos con alta tasa de reprocesos y tiempos de ciclo elevados. Falta de estandarización y métricas claras de eficiencia.",
-        solucion: "Aplicación de Lean Six Sigma para identificar desperdicios y rediseñar flujos críticos. Automatización de pasos manuales y capacitación del equipo en mejora continua, logrando 30% de reducción en tiempo de ciclo.",
-        anexos: [
-            { name: "Mapa de Procesos AS-IS / TO-BE", ext: "PDF" },
-            { name: "Plan de Mejora", ext: "XLSX" },
-        ],
+        contexto: "",
+        solucion: "",
+        anexos: [],
     },
 ];
 
@@ -261,11 +246,11 @@ function ProjectModal({
                 {/* Scrollable content */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {/* Bloque 1: Contexto / Problemática */}
-                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
+                    {(project.contexto || member) && <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
                         <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">
                             Contexto / Problemática
                         </h4>
-                        <p className="text-gray-300 text-sm leading-relaxed">{project.contexto}</p>
+                        {project.contexto && <p className="text-gray-300 text-sm leading-relaxed">{project.contexto}</p>}
                         {member && (
                             <textarea
                                 value={notes.contexto}
@@ -275,14 +260,14 @@ function ProjectModal({
                                 placeholder="Añadir notas sobre el contexto..."
                             />
                         )}
-                    </div>
+                    </div>}
 
                     {/* Bloque 2: Solución desarrollada */}
-                    <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
+                    {(project.solucion || member) && <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
                         <h4 className="text-sm font-semibold text-electric-orange uppercase tracking-widest mb-3">
                             Solución desarrollada
                         </h4>
-                        <p className="text-gray-300 text-sm leading-relaxed">{project.solucion}</p>
+                        {project.solucion && <p className="text-gray-300 text-sm leading-relaxed">{project.solucion}</p>}
                         {member && (
                             <textarea
                                 value={notes.solucion}
@@ -292,7 +277,7 @@ function ProjectModal({
                                 placeholder="Añadir notas sobre la solución..."
                             />
                         )}
-                    </div>
+                    </div>}
 
                     {/* Bloque 3: Anexos y PDFs */}
                     <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
@@ -315,6 +300,9 @@ function ProjectModal({
                                     <span className="text-xs text-gray-500">Sin archivo</span>
                                 </div>
                             ))}
+                            {!project.anexos.length && !files.length && (
+                                <p className="text-sm text-gray-500">Aún no hay archivos cargados.</p>
+                            )}
                         </div>
                         {member && (
                             <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -335,8 +323,15 @@ function ProjectModal({
                             </div>
                         )}
                         {files.map((file) => (
-                            <div key={file.id} className="mt-2 flex items-center justify-between gap-3 p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
-                                <a href={file.url} target="_blank" rel="noreferrer" className="text-sm text-blue-300 hover:underline truncate">{file.name}</a>
+                            <div key={file.id} className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
+                                <a href={file.url} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-3 text-sm text-blue-300 hover:underline">
+                                    {file.mimeType?.startsWith('image/') ? (
+                                        <img src={file.url} alt={file.name} className="h-12 w-12 flex-shrink-0 rounded object-cover" />
+                                    ) : (
+                                        <FileText className="h-5 w-5 flex-shrink-0 text-blue-300" />
+                                    )}
+                                    <span className="truncate">{file.name}</span>
+                                </a>
                                 {member && <button onClick={() => deleteProjectFile(file.id)} className="text-xs text-red-400 hover:text-red-300">Borrar</button>}
                             </div>
                         ))}
@@ -598,7 +593,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
 
                 {projectList.length > 0 && (<>
                 {/* Carousel Container */}
-                <div className="relative flex items-center justify-center h-[520px] md:h-[620px]">
+                <div className="relative flex h-[620px] items-center justify-center md:h-[680px]">
 
                     {/* Left Arrow */}
                     <button
@@ -713,7 +708,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                 </div>
 
                 {/* Dots indicator */}
-                <div className="flex justify-center gap-2 mt-10">
+                <div className="mt-4 flex justify-center gap-2 md:mt-8">
                     {projectList.map((_, index) => (
                         <button
                             key={index}
@@ -730,7 +725,7 @@ export default function PortfolioSection({ member }: PortfolioSectionProps) {
                 </>)}
 
                 {member && (
-                    <div className="mt-8 flex justify-center pb-24 md:pb-8">
+                    <div className="mt-6 flex justify-center pb-24 md:pb-8">
                         <button onClick={() => setEditingProject(null)} className="rounded-full bg-electric-orange px-5 py-2 text-sm font-semibold text-white hover:bg-orange-500">
                             + Nuevo proyecto
                         </button>

@@ -8,7 +8,7 @@ import { useState } from 'react';
 const dockItems = [
     { icon: Home, label: 'Inicio', href: '#' },
     { icon: Github, label: 'GitHub', href: 'https://github.com' },
-    { icon: Linkedin, label: 'LinkedIn', href: 'https://linkedin.com' },
+    { icon: Linkedin, label: 'LinkedIn', href: 'https://www.linkedin.com/company/cipro-proyectos/posts/' },
     { icon: Mail, label: 'Contacto', href: 'mailto:contacto@cipro.com' },
 ];
 

@@ -109,8 +109,8 @@ function ProjectModal({
         event.target.value = '';
         if (!file || !member?.codigoUni) return;
         const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
-        if (!allowed.includes(file.type) || file.size > 4 * 1024 * 1024) {
-            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 4 MB.');
+        if (!allowed.includes(file.type) || file.size > 3 * 1024 * 1024) {
+            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 3 MB.');
             return;
         }
         setUploading(true);

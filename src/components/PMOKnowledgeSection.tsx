@@ -198,8 +198,8 @@ function PMOModal({
             setFileMessage('Solo se permiten PDF, PNG, JPG, WEBP o GIF.');
             return;
         }
-        if (file.size > 4 * 1024 * 1024) {
-            setFileMessage('El archivo no puede superar 4 MB.');
+        if (file.size > 3 * 1024 * 1024) {
+            setFileMessage('El archivo no puede superar 3 MB.');
             return;
         }
 

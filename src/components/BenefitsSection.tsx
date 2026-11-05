@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Users, X, Plus, Pencil } from 'lucide-react';
+import { Calendar, Users, X } from 'lucide-react';
 import BenefitCard from '@/components/ui/benefit-card';
 
 // ─── Datos base de las tarjetas ───────────────────────────────────────────────
@@ -50,7 +50,7 @@ const eventosPasados = [
     { fecha: "Ene 2025", nombre: "Design Thinking Sprint", tipo: "Intensivo", lugar: "Auditorio Facultad" },
 ];
 
-function EventosModal({ member, onClose }: { member?: any; onClose: () => void }) {
+function EventosModal({ onClose }: { onClose: () => void }) {
     const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
     const eventos = activeTab === 'proximos' ? eventosProximos : eventosPasados;
 
@@ -101,13 +101,6 @@ function EventosModal({ member, onClose }: { member?: any; onClose: () => void }
                 ))}
             </div>
 
-            {member && (
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-electric-orange/10 border border-electric-orange/30 text-electric-orange text-sm font-medium hover:bg-electric-orange/20 transition-all">
-                    <Plus className="w-4 h-4" />
-                    Agregar evento
-                </button>
-            )}
-
             <p className="text-[11px] text-gray-600 text-center mt-4">
                 📌 Información actualizada por la directiva de CIPRO. Los detalles pueden cambiar.
             </p>
@@ -138,7 +131,7 @@ const materiales = [
 
 type CapTab = 'temario' | 'expositores' | 'material';
 
-function CapacitacionesModal({ member, onClose }: { member?: any; onClose: () => void }) {
+function CapacitacionesModal({ onClose }: { onClose: () => void }) {
     const [activeTab, setActiveTab] = useState<CapTab>('temario');
 
     const tabs: { key: CapTab; label: string }[] = [
@@ -186,7 +179,6 @@ function CapacitacionesModal({ member, onClose }: { member?: any; onClose: () =>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-gray-500 border border-white/10 px-2 py-0.5 rounded-full">{item.duracion}</span>
-                                    {member && <Pencil className="w-3 h-3 text-gray-600 hover:text-gray-400 cursor-pointer transition-colors" />}
                                 </div>
                             </div>
                         ))}
@@ -210,7 +202,6 @@ function CapacitacionesModal({ member, onClose }: { member?: any; onClose: () =>
                                     <p className="text-white font-semibold text-sm">{exp.nombre}</p>
                                     <p className="text-gray-500 text-xs mt-0.5">{exp.cargo}</p>
                                 </div>
-                                {member && <Pencil className="w-4 h-4 text-gray-600 hover:text-gray-400 cursor-pointer transition-colors flex-shrink-0" />}
                             </div>
                         ))}
                     </motion.div>
@@ -231,21 +222,9 @@ function CapacitacionesModal({ member, onClose }: { member?: any; onClose: () =>
                                     <span className="text-white/80 text-sm">{mat.nombre}</span>
                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-gray-400">{mat.ext}</span>
                                 </div>
-                                {member ? (
-                                    <button className="text-xs px-3 py-1 rounded-lg bg-electric-orange/10 border border-electric-orange/30 text-electric-orange hover:bg-electric-orange/20 transition-all">
-                                        Descargar
-                                    </button>
-                                ) : (
-                                    <span className="text-xs text-gray-600 border border-white/5 px-2 py-1 rounded-lg">Próximamente</span>
-                                )}
+                                <span className="text-xs text-gray-600 border border-white/5 px-2 py-1 rounded-lg">Disponible próximamente</span>
                             </div>
                         ))}
-                        {member && (
-                            <button className="mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all">
-                                <Plus className="w-4 h-4" />
-                                Subir material
-                            </button>
-                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -301,9 +280,10 @@ function ModalHeader({ title, subtitle, onClose }: { title: string; subtitle: st
 // ─── Sección principal ────────────────────────────────────────────────────────
 interface BenefitsSectionProps {
     member?: any;
+    onAccessRestrictedResource?: (resourceName: string) => void;
 }
 
-export default function BenefitsSection({ member }: BenefitsSectionProps) {
+export default function BenefitsSection({ member, onAccessRestrictedResource }: BenefitsSectionProps) {
     const [openModal, setOpenModal] = useState<string | null>(null);
 
     const handleCardClick = (id: string) => {
@@ -333,7 +313,7 @@ export default function BenefitsSection({ member }: BenefitsSectionProps) {
                 </motion.div>
 
                 {/* Grid de tarjetas */}
-                <div className="mx-auto grid max-w-4xl grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {benefits.map((benefit, index) => (
                         <div key={benefit.id} className="relative">
                             <BenefitCard
@@ -355,10 +335,10 @@ export default function BenefitsSection({ member }: BenefitsSectionProps) {
             {/* Modals */}
             <AnimatePresence>
                 {openModal === 'eventos' && (
-                    <EventosModal key="eventos" member={member} onClose={() => setOpenModal(null)} />
+                    <EventosModal key="eventos" onClose={() => setOpenModal(null)} />
                 )}
                 {openModal === 'capacitaciones' && (
-                    <CapacitacionesModal key="capacitaciones" member={member} onClose={() => setOpenModal(null)} />
+                    <CapacitacionesModal key="capacitaciones" onClose={() => setOpenModal(null)} />
                 )}
             </AnimatePresence>
         </section>

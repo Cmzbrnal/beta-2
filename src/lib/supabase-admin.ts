@@ -1,0 +1,75 @@
+import { createClient } from '@supabase/supabase-js';
+
+export type Database = {
+    public: {
+        Tables: {
+            content_entries: {
+                Row: {
+                    id: string;
+                    member_code: string;
+                    project: string;
+                    content: Record<string, string>;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    member_code: string;
+                    project: string;
+                    content?: Record<string, string>;
+                    updated_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['content_entries']['Insert']>;
+                Relationships: [];
+            };
+            content_files: {
+                Row: {
+                    id: string;
+                    member_code: string;
+                    project: string;
+                    name: string;
+                    mime_type: string;
+                    storage_path: string;
+                    public_url: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    member_code: string;
+                    project: string;
+                    name: string;
+                    mime_type: string;
+                    storage_path: string;
+                    public_url: string;
+                    created_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['content_files']['Insert']>;
+                Relationships: [];
+            };
+        };
+        Views: Record<string, never>;
+        Functions: Record<string, never>;
+        Enums: Record<string, never>;
+        CompositeTypes: Record<string, never>;
+    };
+};
+
+let client: ReturnType<typeof createClient<Database>> | null = null;
+
+export function getSupabaseAdmin() {
+    const url = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !serviceRoleKey) {
+        throw new Error('Supabase no está configurado. Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.');
+    }
+
+    if (!client) {
+        client = createClient<Database>(url, serviceRoleKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+        });
+    }
+
+    return client;
+}
+
+export const SUPABASE_CONTENT_BUCKET = 'cipro-content';

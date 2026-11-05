@@ -45,6 +45,56 @@ export type Database = {
                 Update: Partial<Database['public']['Tables']['content_files']['Insert']>;
                 Relationships: [];
             };
+            content_entities: {
+                Row: {
+                    id: string;
+                    section: 'biblioteca' | 'eventos' | 'capacitaciones';
+                    title: string;
+                    description: string;
+                    content: Record<string, unknown>;
+                    status: 'draft' | 'published';
+                    created_by: string;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    section: 'biblioteca' | 'eventos' | 'capacitaciones';
+                    title: string;
+                    description?: string;
+                    content?: Record<string, unknown>;
+                    status?: 'draft' | 'published';
+                    created_by: string;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['content_entities']['Insert']>;
+                Relationships: [];
+            };
+            content_entity_files: {
+                Row: {
+                    id: string;
+                    entity_id: string;
+                    member_code: string;
+                    name: string;
+                    mime_type: string;
+                    storage_path: string;
+                    public_url: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    entity_id: string;
+                    member_code: string;
+                    name: string;
+                    mime_type: string;
+                    storage_path: string;
+                    public_url: string;
+                    created_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['content_entity_files']['Insert']>;
+                Relationships: [];
+            };
             projects: {
                 Row: {
                     id: string;

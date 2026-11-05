@@ -31,6 +31,11 @@ Para habilitar proyectos dinámicos, ejecuta también la sección `projects` del
 [`../supabase/schema.sql`](../supabase/schema.sql) en el SQL Editor. Los miembros podrán
 subir una imagen, guardar un borrador, previsualizarlo y publicarlo con confirmación.
 
+Para separar Biblioteca, Eventos y Capacitaciones por registro, ejecuta una vez
+[`../supabase/content-sections-migration.sql`](../supabase/content-sections-migration.sql).
+No borra ni modifica los datos existentes: crea un catálogo común con `id` propio y
+relaciona los archivos nuevos con ese registro concreto.
+
 ## 3. Qué permanece en Google Sheets
 
 No se cambia el webhook actual:

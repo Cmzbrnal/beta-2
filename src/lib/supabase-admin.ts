@@ -98,4 +98,4 @@ export function getSupabaseAdmin() {
     return client;
 }
 
-export const SUPABASE_CONTENT_BUCKET = 'cipro-content';
+export const SUPABASE_CONTENT_BUCKET = 'contenido-publico';

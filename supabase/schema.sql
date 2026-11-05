@@ -21,7 +21,7 @@ create table if not exists public.content_files (
 );
 
 insert into storage.buckets (id, name, public)
-values ('cipro-content', 'cipro-content', true)
+values ('contenido-publico', 'contenido-publico', true)
 on conflict (id) do update set public = true;
 
 alter table public.content_entries enable row level security;

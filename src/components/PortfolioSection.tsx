@@ -78,6 +78,7 @@ function ProjectModal({
 }) {
     const [notes, setNotes] = useState({ contexto: '', solucion: '' });
     const [saving, setSaving] = useState(false);
+    const [publishing, setPublishing] = useState(false);
     const [message, setMessage] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [files, setFiles] = useState<{ id: string; name: string; url: string; mimeType?: string }[]>(project.files || []);
@@ -194,6 +195,34 @@ function ProjectModal({
             })
         });
         setMessage('Notas eliminadas.');
+    };
+
+    const publishNotes = async () => {
+        if (!member?.codigoUni) return;
+        if (!window.confirm('¿Publicar estas notas y archivos para todos los visitantes?')) return;
+        setPublishing(true);
+        setMessage('');
+        try {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'publish',
+                    title: project.title,
+                    description: project.description,
+                    imageUrl: project.image,
+                    contexto: notes.contexto,
+                    solucion: notes.solucion,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            setMessage('Contenido publicado para todos. Recarga la página para verlo sin iniciar sesión.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudo publicar el contenido.');
+        } finally {
+            setPublishing(false);
+        }
     };
 
     return (
@@ -314,6 +343,9 @@ function ProjectModal({
                                 <button onClick={saveNotes} disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-all disabled:opacity-50">
                                     <Save className="w-4 h-4" />
                                     {saving ? 'Guardando...' : 'Guardar notas'}
+                                </button>
+                                <button onClick={publishNotes} disabled={publishing} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-electric-orange/10 border border-electric-orange/30 text-electric-orange text-sm font-medium hover:bg-electric-orange/20 transition-all disabled:opacity-50">
+                                    {publishing ? 'Publicando...' : 'Publicar para todos'}
                                 </button>
                                 <button onClick={clearNotes} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all">
                                     <Trash2 className="w-4 h-4" />

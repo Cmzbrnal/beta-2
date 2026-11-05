@@ -173,11 +173,30 @@ export async function POST(request: NextRequest) {
                 updated_at: new Date().toISOString()
             };
 
-            const query = id
-                ? supabase.from('projects').update(project).eq('id', id)
+            let projectId = id;
+            if (!projectId && action === 'publish') {
+                const { data: existing, error: existingError } = await supabase
+                    .from('projects')
+                    .select('id')
+                    .eq('title', title)
+                    .eq('created_by', member.codigoUni)
+                    .maybeSingle();
+                if (existingError) throw existingError;
+                projectId = existing?.id || '';
+            }
+            const query = projectId
+                ? supabase.from('projects').update(project).eq('id', projectId)
                 : supabase.from('projects').insert({ ...project, created_by: member.codigoUni });
             const { data, error } = await query.select('id, title, description, image_url, content, status, created_at, updated_at').single();
             if (error) throw error;
+            if (action === 'publish') {
+                const { error: filesError } = await supabase
+                    .from('content_files')
+                    .update({ project: data.id })
+                    .eq('member_code', member.codigoUni)
+                    .eq('project', title);
+                if (filesError) throw filesError;
+            }
             return NextResponse.json({ success: true, project: data });
         }
 

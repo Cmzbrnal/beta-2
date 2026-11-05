@@ -18,6 +18,7 @@ type Entity = {
     description: string;
     content: Record<string, unknown>;
     status: 'draft' | 'published';
+    created_by?: string;
     files: EntityFile[];
 };
 
@@ -42,7 +43,9 @@ export default function SectionContentFiles({
             .then((response) => response.json())
             .then((data) => {
                 if (!data.success) throw new Error(data.message);
-                const current = data.entities?.find((item: Entity) => item.title === title) || data.entities?.[0];
+                const current = data.entities?.find((item: Entity) =>
+                    item.title === title && (!member?.codigoUni || item.created_by === member.codigoUni)
+                ) || data.entities?.[0];
                 if (current) {
                     setEntity(current);
                     setDescription(current.description || '');
@@ -73,7 +76,7 @@ export default function SectionContentFiles({
         return created;
     };
 
-    const saveDescription = async () => {
+    const saveDescription = async (publish = false) => {
         setBusy(true);
         setMessage('');
         try {
@@ -82,7 +85,7 @@ export default function SectionContentFiles({
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: current.status === 'published' ? 'publish' : 'save',
+                    action: publish || current.status === 'published' ? 'publish' : 'save',
                     id: current.id,
                     section,
                     title,
@@ -161,8 +164,11 @@ export default function SectionContentFiles({
                         className="w-full resize-none rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-white placeholder-gray-600 outline-none focus:border-electric-orange/50"
                     />
                     <div className="mt-3 flex flex-wrap gap-2">
-                        <button onClick={saveDescription} disabled={busy} className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300 disabled:opacity-50">
-                            <Save className="h-4 w-4" /> Guardar contenido
+                        <button onClick={() => saveDescription(false)} disabled={busy} className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300 disabled:opacity-50">
+                            <Save className="h-4 w-4" /> Guardar borrador
+                        </button>
+                        <button onClick={() => saveDescription(true)} disabled={busy} className="flex items-center gap-2 rounded-lg bg-electric-orange px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                            Publicar contenido
                         </button>
                         <input ref={inputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadFile} className="hidden" />
                         <button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50">

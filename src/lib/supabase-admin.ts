@@ -48,7 +48,8 @@ export type Database = {
             content_entities: {
                 Row: {
                     id: string;
-                    section: 'biblioteca' | 'eventos' | 'capacitaciones';
+                    section: 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
+                    folder: string;
                     title: string;
                     description: string;
                     content: Record<string, unknown>;
@@ -59,7 +60,8 @@ export type Database = {
                 };
                 Insert: {
                     id?: string;
-                    section: 'biblioteca' | 'eventos' | 'capacitaciones';
+                    section: 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
+                    folder?: string;
                     title: string;
                     description?: string;
                     content?: Record<string, unknown>;
@@ -93,6 +95,52 @@ export type Database = {
                     created_at?: string;
                 };
                 Update: Partial<Database['public']['Tables']['content_entity_files']['Insert']>;
+                Relationships: [];
+            };
+            content_folders: {
+                Row: {
+                    id: string;
+                    section: 'biblioteca' | 'pmo' | 'metodologias' | 'documentacion';
+                    name: string;
+                    created_by: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    section: 'biblioteca' | 'pmo' | 'metodologias' | 'documentacion';
+                    name: string;
+                    created_by: string;
+                    created_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['content_folders']['Insert']>;
+                Relationships: [];
+            };
+            content_spaces: {
+                Row: {
+                    id: string;
+                    space_key: string;
+                    section: 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
+                    title: string;
+                    description: string;
+                    display_order: number;
+                    is_default: boolean;
+                    created_by: string;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    space_key: string;
+                    section: 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
+                    title: string;
+                    description?: string;
+                    display_order?: number;
+                    is_default?: boolean;
+                    created_by: string;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['content_spaces']['Insert']>;
                 Relationships: [];
             };
             projects: {

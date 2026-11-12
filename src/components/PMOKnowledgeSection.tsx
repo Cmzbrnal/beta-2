@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     FileText,
@@ -11,6 +11,9 @@ import {
     ArrowRight,
     Sparkles,
     X,
+    Pencil,
+    Plus,
+    Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SectionContentFiles from '@/components/SectionContentFiles';
@@ -19,6 +22,17 @@ interface PMOKnowledgeSectionProps {
     member?: any;
     onAccessRestrictedResource?: (resourceName: string) => void;
 }
+
+type SpaceSection = 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
+type Space = {
+    id: string;
+    space_key: string;
+    section: SpaceSection;
+    title: string;
+    description: string;
+    display_order: number;
+    is_default: boolean;
+};
 
 interface BentoItemProps {
     title: string;
@@ -92,42 +106,66 @@ function BentoItem({
 // ─── Modal data ───────────────────────────────────────────────────────────────
 interface ModalData {
     id: string;
+    section: SpaceSection;
     title: string;
     description: string;
     restricted?: boolean;
 }
 
-const modalData: ModalData[] = [
+const fallbackSpaces: Space[] = [
     {
         id: 'biblioteca',
+        space_key: 'biblioteca',
+        section: 'biblioteca',
         title: 'Biblioteca de Recursos',
         description: '500+ templates y guías. Acceso exclusivo para miembros CIPRO con recursos actualizados sobre gestión de proyectos, marcos de referencia y mejores prácticas internacionales.',
-        restricted: true,
+        display_order: 1,
+        is_default: true,
     },
     {
         id: 'metodologias',
+        space_key: 'metodologias',
+        section: 'metodologias',
         title: 'Metodologías Ágiles',
         description: 'Scrum, Kanban, SAFe, Design Thinking. Domina las frameworks más utilizadas en proyectos de transformación digital y gestión ágil moderna.',
+        display_order: 2,
+        is_default: true,
     },
     {
         id: 'riesgos',
+        space_key: 'riesgos',
+        section: 'documentacion',
         title: 'Gestión de Riesgos',
         description: 'Matrices, planes de contingencia y registro de issues. Identifica, analiza y mitiga riesgos como un profesional con herramientas probadas.',
+        display_order: 3,
+        is_default: true,
     },
     {
         id: 'kpis',
+        space_key: 'kpis',
+        section: 'documentacion',
         title: 'KPIs & Métricas',
         description: 'Dashboards y OKRs para medir el rendimiento de tus proyectos. Herramientas para visualizar el avance y comunicar resultados a stakeholders.',
+        display_order: 4,
+        is_default: true,
     },
     {
         id: 'pmo',
+        space_key: 'pmo',
+        section: 'pmo',
         title: 'PMO Setup',
         description: 'Constitución de PMO desde cero. Governance models, roles y responsabilidades para estructurar tu oficina de proyectos de manera efectiva.',
+        display_order: 5,
+        is_default: true,
     },
     {
         id: 'documentacion',
+        space_key: 'documentacion',
+        section: 'documentacion',
         title: 'Documentación',
         description: 'Charters, planes, reportes y plantillas profesionales. Todo lo que necesitas para documentar tus proyectos con estándares internacionales.',
+        display_order: 6,
+        is_default: true,
     },
 ];
 
@@ -181,7 +219,7 @@ function PMOModal({
                             Contenido disponible
                         </p>
                     </div>
-                    <SectionContentFiles section="biblioteca" title={data.title} member={member} />
+                    <SectionContentFiles section={data.section} title={data.title} member={member} />
                 </div>
             </motion.div>
         </motion.div>
@@ -191,16 +229,67 @@ function PMOModal({
 // ─── Main Section ─────────────────────────────────────────────────────────────
 export default function PMOKnowledgeSection({ member, onAccessRestrictedResource }: PMOKnowledgeSectionProps) {
     const [openModal, setOpenModal] = useState<string | null>(null);
+    const [spaces, setSpaces] = useState<Space[]>(fallbackSpaces);
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState({ id: '', title: '', description: '', section: 'biblioteca' as SpaceSection });
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        fetch('/api/content-spaces')
+            .then((response) => response.json())
+            .then((data) => {
+                if (!data.success) throw new Error(data.message);
+                setSpaces(data.spaces);
+            })
+            .catch((error) => setMessage(error instanceof Error ? error.message : 'No se pudieron cargar los espacios.'));
+    }, []);
 
     const handleBentoClick = (id: string) => {
-        if (id === 'biblioteca' && !member && onAccessRestrictedResource) {
-            onAccessRestrictedResource('Biblioteca de Recursos');
+        const space = spaces.find((item) => item.id === id);
+        if (space?.section === 'biblioteca' && !member && onAccessRestrictedResource) {
+            onAccessRestrictedResource(space.title);
             return;
         }
         setOpenModal(id);
     };
 
-    const activeModal = modalData.find(m => m.id === openModal) ?? null;
+    const activeModal = spaces.find((space) => space.id === openModal) ?? null;
+
+    const saveSpace = async () => {
+        if (!member || !draft.title.trim()) return;
+        setMessage('');
+        const response = await fetch('/api/content-spaces', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'save', ...draft }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            setMessage(data.message || 'No se pudo guardar el espacio.');
+            return;
+        }
+        setSpaces((current) => draft.id
+            ? current.map((space) => space.id === draft.id ? data.space : space)
+            : [...current, data.space]);
+        setDraft({ id: '', title: '', description: '', section: 'biblioteca' });
+        setMessage('Espacio guardado.');
+    };
+
+    const deleteSpace = async (space: Space) => {
+        if (!member || space.is_default || !window.confirm(`¿Eliminar "${space.title}"?`)) return;
+        const response = await fetch('/api/content-spaces', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id: space.id }),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            setMessage(data.message || 'No se pudo eliminar el espacio.');
+            return;
+        }
+        setSpaces((current) => current.filter((item) => item.id !== space.id));
+        if (openModal === space.id) setOpenModal(null);
+    };
 
     return (
         <section id="repositorio" className="py-32 bg-void-black relative overflow-hidden">
@@ -222,7 +311,46 @@ export default function PMOKnowledgeSection({ member, onAccessRestrictedResource
                     <p className="text-gray-400 max-w-3xl mx-auto text-lg">
                         Convertimos la teoría en herramientas efectivas. Nuestro directorio más grande de todo lo aprendido sobre Project Management durante estos últimos 10 años.
                     </p>
+                    {member && (
+                        <button onClick={() => setEditing((value) => !value)} className="mt-5 inline-flex items-center gap-2 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-4 py-2 text-sm text-orange-200">
+                            <Pencil className="h-4 w-4" /> {editing ? 'Cerrar edición' : 'Editar espacios'}
+                        </button>
+                    )}
                 </motion.div>
+
+                {editing && member && (
+                    <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                        <div className="flex flex-wrap gap-2">
+                            {spaces.map((space) => (
+                                <button key={space.id} onClick={() => setDraft({ id: space.id, title: space.title, description: space.description, section: space.section })} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-gray-300 hover:border-electric-orange/40">
+                                    {space.title}
+                                </button>
+                            ))}
+                            <button onClick={() => setDraft({ id: '', title: '', description: '', section: 'biblioteca' })} className="inline-flex items-center gap-1 rounded-lg border border-blue-500/30 px-3 py-2 text-xs text-blue-300">
+                                <Plus className="h-3 w-3" /> Nuevo espacio
+                            </button>
+                        </div>
+                        <div className="mt-4 grid gap-2 md:grid-cols-[1fr_1fr_180px_auto]">
+                            <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} placeholder="Título del espacio" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
+                            <input value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Descripción corta" className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none" />
+                            <select value={draft.section} onChange={(event) => setDraft({ ...draft, section: event.target.value as SpaceSection })} className="rounded-lg border border-white/10 bg-[#131926] px-3 py-2 text-sm text-white outline-none">
+                                <option value="biblioteca">Biblioteca</option>
+                                <option value="pmo">PMO Setup</option>
+                                <option value="metodologias">Metodologías ágiles</option>
+                                <option value="documentacion">Documentación</option>
+                                <option value="eventos">Eventos</option>
+                                <option value="capacitaciones">Capacitaciones</option>
+                            </select>
+                            <button onClick={saveSpace} className="rounded-lg bg-electric-orange px-4 py-2 text-sm font-semibold text-white">Guardar</button>
+                        </div>
+                        {draft.id && !spaces.find((space) => space.id === draft.id)?.is_default && (
+                            <button onClick={() => { const space = spaces.find((item) => item.id === draft.id); if (space) deleteSpace(space); }} className="mt-3 inline-flex items-center gap-1 text-xs text-red-300">
+                                <Trash2 className="h-3 w-3" /> Eliminar espacio
+                            </button>
+                        )}
+                        {message && <p className="mt-2 text-xs text-gray-400">{message}</p>}
+                    </div>
+                )}
 
                 {/* Bento Grid */}
                 <motion.div
@@ -233,63 +361,17 @@ export default function PMOKnowledgeSection({ member, onAccessRestrictedResource
                     className="grid grid-cols-1 md:grid-cols-4 gap-4"
                 >
                     {/* Top Wide Card - Biblioteca de Recursos */}
-                    <BentoItem
-                        title="Biblioteca de Recursos"
-                        description="Accede a más de 500 templates, guías y documentos esenciales para gestión de proyectos."
-                        icon={<BookOpen className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" />}
-                        className="md:col-span-4 h-auto min-h-[180px] md:h-[180px]"
-                        onClick={() => handleBentoClick('biblioteca')}
-                    />
+                    {spaces.map((space, index) => (
+                        <BentoItem
+                            key={space.id}
+                            title={space.title}
+                            description={space.description}
+                            icon={index === 0 ? <BookOpen className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" /> : index === 1 ? <Layers className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" /> : index === 4 ? <Target className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" /> : <FileText className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" />}
+                            className={index === 0 ? 'md:col-span-4 min-h-[180px] md:h-[180px]' : index === 1 ? 'md:col-span-1 md:row-span-2 min-h-[220px]' : 'md:col-span-1 min-h-[160px] md:h-[200px]'}
+                            onClick={() => handleBentoClick(space.id)}
+                        />
+                    ))}
 
-                    {/* Left Tall Card - Metodologías Ágiles */}
-                    <BentoItem
-                        title="Metodologías Ágiles"
-                        description="Scrum, Kanban, SAFe y más. Domina las frameworks más utilizadas."
-                        icon={<Layers className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" />}
-                        className="md:col-span-1 md:row-span-2 h-auto min-h-[220px] md:h-auto"
-                        onClick={() => handleBentoClick('metodologias')}
-                    />
-
-                    {/* Center Medium Card - Featured: Gestión de Riesgos */}
-                    <BentoItem
-                        title="Gestión de Riesgos"
-                        description="Identifica, analiza y mitiga riesgos como un profesional."
-                        icon={
-                            <div className="relative">
-                                <Sparkles className="w-6 h-6 text-electric-orange" />
-                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-electric-orange rounded-full animate-pulse" />
-                            </div>
-                        }
-                        className="md:col-span-2 h-auto min-h-[180px] md:h-[200px] border-electric-orange/20 bg-gradient-to-br from-electric-orange/5 to-transparent"
-                        iconClassName="bg-electric-orange/10 border-electric-orange/20"
-                        onClick={() => handleBentoClick('riesgos')}
-                    />
-
-                    {/* Right Small Card - KPIs & Métricas */}
-                    <BentoItem
-                        title="KPIs & Métricas"
-                        icon={<BarChart3 className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" />}
-                        className="md:col-span-1 h-auto min-h-[160px] md:h-[200px]"
-                        onClick={() => handleBentoClick('kpis')}
-                    />
-
-                    {/* Bottom Left Medium Card - PMO Setup */}
-                    <BentoItem
-                        title="PMO Setup"
-                        description="Estructura tu oficina de proyectos desde cero."
-                        icon={<Target className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" />}
-                        className="md:col-span-2 h-auto min-h-[160px] md:h-[160px]"
-                        onClick={() => handleBentoClick('pmo')}
-                    />
-
-                    {/* Bottom Right Card - Documentación */}
-                    <BentoItem
-                        title="Documentación"
-                        description="Charters, planes, reportes y plantillas profesionales."
-                        icon={<FileText className="w-6 h-6 text-white group-hover:text-electric-orange transition-colors" />}
-                        className="md:col-span-1 h-auto min-h-[160px] md:h-[160px]"
-                        onClick={() => handleBentoClick('documentacion')}
-                    />
                 </motion.div>
             </div>
 

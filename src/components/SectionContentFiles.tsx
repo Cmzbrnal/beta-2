@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Eye, FileText, Image as ImageIcon, Save, Upload } from 'lucide-react';
 
-type Section = 'biblioteca' | 'eventos' | 'capacitaciones';
+type Section = 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
 
 type EntityFile = {
     id: string;
@@ -17,6 +17,7 @@ type Entity = {
     title: string;
     description: string;
     content: Record<string, unknown>;
+    folder: string;
     status: 'draft' | 'published';
     created_by?: string;
     files: EntityFile[];
@@ -37,23 +38,30 @@ export default function SectionContentFiles({
     const [files, setFiles] = useState<EntityFile[]>([]);
     const [message, setMessage] = useState('');
     const [busy, setBusy] = useState(false);
+    const [folders, setFolders] = useState<string[]>([]);
+    const [folder, setFolder] = useState('General');
+    const [newFolder, setNewFolder] = useState('');
 
     useEffect(() => {
         fetch(`/api/content-entities?section=${section}&status=${member ? 'all' : 'published'}`)
             .then((response) => response.json())
             .then((data) => {
                 if (!data.success) throw new Error(data.message);
+                setFolders(data.folders || ['General']);
                 const current = data.entities?.find((item: Entity) =>
-                    item.title === title && (!member?.codigoUni || item.created_by === member.codigoUni)
-                ) || data.entities?.[0];
+                    item.title === title &&
+                    (item.folder === folder || (!member && !item.folder)) &&
+                    (!member?.codigoUni || item.created_by === member.codigoUni)
+                ) || (!member ? data.entities?.find((item: Entity) => item.title === title) : undefined);
                 if (current) {
                     setEntity(current);
+                    setFolder(current.folder || 'General');
                     setDescription(current.description || '');
                     setFiles(current.files || []);
                 }
             })
             .catch((error) => setMessage(error instanceof Error ? error.message : 'No se pudo cargar el contenido.'));
-    }, [member, section, title]);
+    }, [member, section, title, folder]);
 
     const ensureEntity = async () => {
         if (entity) return entity;
@@ -64,6 +72,7 @@ export default function SectionContentFiles({
             body: JSON.stringify({
                 action: 'save',
                 section,
+                folder,
                 title,
                 description,
                 content: {},
@@ -88,6 +97,7 @@ export default function SectionContentFiles({
                     action: publish || current.status === 'published' ? 'publish' : 'save',
                     id: current.id,
                     section,
+                    folder,
                     title,
                     description,
                     content: current.content,
@@ -135,6 +145,7 @@ export default function SectionContentFiles({
                     action: 'uploadFile',
                     section,
                     entityId: current.id,
+                    folder,
                     fileName: file.name,
                     mimeType: file.type,
                     base64,
@@ -151,9 +162,45 @@ export default function SectionContentFiles({
         }
     };
 
+    const createFolder = async () => {
+        const name = newFolder.trim();
+        if (!name || !member?.codigoUni) return;
+        setBusy(true);
+        try {
+            const response = await fetch('/api/content-entities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'createFolder', section, name }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message);
+            setFolders((current) => current.includes(data.folder) ? current : [...current, data.folder]);
+            setFolder(data.folder);
+            setNewFolder('');
+            setMessage('Carpeta creada.');
+        } catch (error) {
+            setMessage(error instanceof Error ? error.message : 'No se pudo crear la carpeta.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
     return (
         <div className="mt-6 border-t border-white/10 pt-5">
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-500">Contenido de esta sección</p>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+                {folders.map((item) => (
+                    <button key={item} onClick={() => { setFolder(item); setEntity(null); setFiles([]); }} className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${folder === item ? 'border-electric-orange/50 bg-electric-orange/10 text-orange-200' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'}`}>
+                        {item}
+                    </button>
+                ))}
+                {member && (
+                    <div className="flex items-center gap-1">
+                        <input value={newFolder} onChange={(event) => setNewFolder(event.target.value)} placeholder="Nueva carpeta" className="w-32 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white outline-none" />
+                        <button onClick={createFolder} disabled={busy || !newFolder.trim()} className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2 py-1.5 text-xs text-blue-300 disabled:opacity-50">Crear</button>
+                    </div>
+                )}
+            </div>
             {member && (
                 <>
                     <textarea

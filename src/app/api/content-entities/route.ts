@@ -10,8 +10,15 @@ const ALLOWED_MIME_TYPES = new Set([
     'image/webp',
     'image/gif',
 ]);
-const SECTIONS = new Set(['biblioteca', 'eventos', 'capacitaciones']);
-type Section = 'biblioteca' | 'eventos' | 'capacitaciones';
+const SECTIONS = new Set(['biblioteca', 'eventos', 'capacitaciones', 'pmo', 'metodologias', 'documentacion']);
+const FOLDER_SECTIONS = new Set(['biblioteca', 'pmo', 'metodologias', 'documentacion']);
+const DEFAULT_FOLDERS: Record<string, string[]> = {
+    pmo: ['General', 'Sesiones PMBOK', 'Formatos entregables'],
+    metodologias: ['General', 'Scrum', 'Kanban', 'SAFe'],
+    documentacion: ['General', 'Charters y planes', 'Reportes'],
+    biblioteca: ['General', 'Guías y libros', 'Plantillas y formatos'],
+};
+type Section = 'biblioteca' | 'eventos' | 'capacitaciones' | 'pmo' | 'metodologias' | 'documentacion';
 type EntityStatus = 'draft' | 'published';
 
 function isSection(value: string): value is Section {
@@ -48,7 +55,7 @@ export async function GET(request: NextRequest) {
         const supabase = getSupabaseAdmin();
         let query = supabase
             .from('content_entities')
-            .select('id, section, title, description, content, status, created_by, created_at, updated_at')
+            .select('id, section, folder, title, description, content, status, created_by, created_at, updated_at')
             .eq('section', section)
             .order('created_at', { ascending: true });
         if (statusParam !== 'all') {
@@ -77,7 +84,18 @@ export async function GET(request: NextRequest) {
             };
         }));
 
-        return NextResponse.json({ success: true, entities });
+        let folders = DEFAULT_FOLDERS[section] || [];
+        if (FOLDER_SECTIONS.has(section)) {
+            const customFolders = await supabase
+                .from('content_folders')
+                .select('name')
+                .eq('section', section as 'biblioteca' | 'pmo' | 'metodologias' | 'documentacion')
+                .order('created_at', { ascending: true });
+            if (customFolders.error && customFolders.error.code !== '42P01') throw customFolders.error;
+            const customFolderNames = (customFolders.data || []) as Array<{ name: string }>;
+            folders = Array.from(new Set([...folders, ...customFolderNames.map((folder) => folder.name)]));
+        }
+        return NextResponse.json({ success: true, folders, entities });
     } catch (error) {
         console.error('Error consultando entidades de contenido:', error);
         return responseError(errorMessage(error), 502);
@@ -95,11 +113,27 @@ export async function POST(request: NextRequest) {
         const section = String(body.section || '');
         if (!isSection(section)) return responseError('Sección inválida.');
 
+        if (action === 'createFolder') {
+            if (!FOLDER_SECTIONS.has(section)) return responseError('Esta sección no admite carpetas.');
+            const name = String(body.name || '').trim().replace(/\s+/g, ' ');
+            if (!name || name.length > 80) return responseError('Indica un nombre de carpeta válido.');
+            const { data, error } = await supabase
+                .from('content_folders')
+                .insert({ section: section as 'biblioteca' | 'pmo' | 'metodologias' | 'documentacion', name, created_by: member.codigoUni })
+                .select('name')
+                .single();
+            if (error?.code === '23505') return responseError('Ya existe una carpeta con ese nombre.');
+            if (error && error.code !== '42P01') throw error;
+            return NextResponse.json({ success: true, folder: data?.name || name });
+        }
+
         if (action === 'save' || action === 'publish') {
             const title = String(body.title || '').trim();
             if (!title) return responseError('El título es obligatorio.');
+            const folder = String(body.folder || 'General').trim() || 'General';
             const entity = {
                 section,
+                folder,
                 title,
                 description: String(body.description || '').trim(),
                 content: body.content && typeof body.content === 'object' ? body.content as Record<string, unknown> : {},
@@ -112,7 +146,7 @@ export async function POST(request: NextRequest) {
                 ? supabase.from('content_entities').update(entity).eq('id', id).eq('created_by', member.codigoUni)
                 : supabase.from('content_entities').insert(entity);
             const { data, error } = await query
-                .select('id, section, title, description, content, status, created_by, created_at, updated_at')
+                .select('id, section, folder, title, description, content, status, created_by, created_at, updated_at')
                 .single();
             if (error) throw error;
             return NextResponse.json({ success: true, entity: data });
@@ -139,7 +173,8 @@ export async function POST(request: NextRequest) {
             const buffer = Buffer.from(base64, 'base64');
             if (buffer.byteLength > MAX_FILE_SIZE) return responseError('El archivo no puede superar 8 MB.');
 
-            const storagePath = `${section}/${member.codigoUni}/${entityId}/${Date.now()}-${cleanPathPart(fileName)}`;
+            const folder = cleanPathPart(String(body.folder || 'General'));
+            const storagePath = `${section}/${member.codigoUni}/${folder}/${entityId}/${Date.now()}-${cleanPathPart(fileName)}`;
             const upload = await supabase.storage
                 .from(SUPABASE_CONTENT_BUCKET)
                 .upload(storagePath, buffer, { contentType: mimeType, upsert: false });

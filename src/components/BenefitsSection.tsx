@@ -94,7 +94,7 @@ function useEntities(section: Section, member?: any) {
             const response = await fetch(`/api/content-entities?section=${section}&status=${status}`);
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message);
-            setEntities((data.entities || []).filter((entity: Entity) => !member?.codigoUni || entity.status === 'published' || entity.created_by === member.codigoUni));
+            setEntities(data.entities || []);
         } finally { setLoading(false); }
     };
     useEffect(() => { reload().catch(() => setLoading(false)); }, [section, member?.codigoUni]);

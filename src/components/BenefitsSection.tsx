@@ -16,10 +16,11 @@ type Entity = {
     content: Record<string, any>;
     status: 'draft' | 'published';
     created_by?: string;
+    canEdit?: boolean;
     files: EntityFile[];
 };
-type EventItem = { id?: string; nombre: string; fecha: string; lugar: string; tipo: string; estado: 'proximo' | 'pasado'; files?: EntityFile[] };
-type TrainingItem = { id?: string; title: string; subtitle: string; text: string; files: EntityFile[] };
+type EventItem = { id?: string; nombre: string; fecha: string; lugar: string; tipo: string; estado: 'proximo' | 'pasado'; files?: EntityFile[]; canEdit?: boolean };
+type TrainingItem = { id?: string; title: string; subtitle: string; text: string; files: EntityFile[]; canEdit?: boolean };
 
 const benefits = [
     { id: 'eventos', icon: Calendar, title: 'Eventos Exclusivos', description: 'Acceso privilegiado a networking y conferencias con líderes de la industria.', imageSrc: '/imagenes/cards/eventos_exclusivos.webp', imageAlt: 'Eventos profesionales y networking', hasModal: true },
@@ -130,7 +131,7 @@ function EntityFiles({ section, entity, member, onChange }: { section: Section; 
         } finally { setBusy(false); }
     };
     return <div className="mt-4 border-t border-white/10 pt-4">
-        {member && <><input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={upload} className="hidden" /><button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50"><Upload className="h-4 w-4" />{busy ? 'Cargando...' : 'Subir afiche, PDF, imagen o documento'}</button></>}
+        {member && entity.created_by === member.codigoUni && <><input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={upload} className="hidden" /><button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50"><Upload className="h-4 w-4" />{busy ? 'Cargando...' : 'Subir afiche, PDF, imagen o documento'}</button></>}
         <div className="mt-2 space-y-2">{entity.files.map((file) => <div key={file.id} className="flex items-center justify-between rounded-lg border border-blue-500/20 bg-blue-500/5 p-2 text-sm">
             <span className="flex min-w-0 items-center gap-2 text-blue-300">{file.mimeType.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}<span className="truncate">{file.name}</span></span><PreviewFile file={file} />
         </div>)}</div>
@@ -155,7 +156,7 @@ function EventosModal({ onClose, member }: { onClose: () => void; member?: any }
     const [creating, setCreating] = useState(false);
     const [message, setMessage] = useState('');
     const events = useMemo(() => {
-        const current = entities.filter((entity) => entity.content?.kind === 'event').map((entity) => ({ id: entity.id, ...entity.content, files: entity.files }));
+        const current = entities.filter((entity) => entity.content?.kind === 'event').map((entity) => ({ id: entity.id, ...entity.content, files: entity.files, canEdit: entity.created_by === member?.codigoUni }));
         if (current.length) return current as EventItem[];
         const legacy = entities.find((entity) => Array.isArray(entity.content?.proximos) || Array.isArray(entity.content?.pasados));
         if (legacy) {
@@ -183,7 +184,7 @@ function EventosModal({ onClose, member }: { onClose: () => void; member?: any }
         {member && <button onClick={() => { setCreating(true); setEditing(null); }} className="mb-4 flex items-center gap-2 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Plus className="h-4 w-4" />Crear evento</button>}
         {creating && <EventForm onSave={save} onCancel={() => setCreating(false)} />}
         <div className="mt-4 space-y-3">{!loading && visible.map((event, index) => <div key={event.id || event.nombre} className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-            {editing === event ? <EventForm event={event} onSave={save} onCancel={() => setEditing(null)} /> : <div className="flex items-start gap-4"><div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-electric-orange/20 bg-electric-orange/10 text-sm font-bold text-electric-orange">{String(index + 1).padStart(2, '0')}</div><div className="min-w-0 flex-1"><p className="font-semibold text-white">{event.nombre}</p><p className="mt-0.5 text-xs text-gray-500">📍 {event.lugar}</p><div className="mt-2 flex flex-wrap gap-2"><span className={badgeClass}>{event.fecha}</span><span className={`${badgeClass} ${typeColors[event.tipo] || ''}`}>{event.tipo}</span></div></div>{member && <div className="flex gap-2"><button onClick={() => setEditing(event)} title="Editar" className="text-gray-400 hover:text-white"><Pencil className="h-4 w-4" /></button>{event.id && <button onClick={() => remove(event)} title="Eliminar" className="text-red-400"><Trash2 className="h-4 w-4" /></button>}</div>}</div>}
+            {editing === event ? <EventForm event={event} onSave={save} onCancel={() => setEditing(null)} /> : <div className="flex items-start gap-4"><div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-electric-orange/20 bg-electric-orange/10 text-sm font-bold text-electric-orange">{String(index + 1).padStart(2, '0')}</div><div className="min-w-0 flex-1"><p className="font-semibold text-white">{event.nombre}</p><p className="mt-0.5 text-xs text-gray-500">📍 {event.lugar}</p><div className="mt-2 flex flex-wrap gap-2"><span className={badgeClass}>{event.fecha}</span><span className={`${badgeClass} ${typeColors[event.tipo] || ''}`}>{event.tipo}</span></div></div>{member && event.canEdit && <div className="flex gap-2"><button onClick={() => setEditing(event)} title="Editar" className="text-gray-400 hover:text-white"><Pencil className="h-4 w-4" /></button>{event.id && <button onClick={() => remove(event)} title="Eliminar" className="text-red-400"><Trash2 className="h-4 w-4" /></button>}</div>}</div>}
             {event.id && <EntityFiles section="eventos" entity={entities.find((entity) => entity.id === event.id)!} member={member} onChange={() => reload()} />}
         </div>)}</div>
         {message && <p className="mt-3 text-xs text-gray-400">{message}</p>}
@@ -218,7 +219,7 @@ function TrainingDetail({ training, entity, member, onClose, onEdit, onFilesChan
             <div>
                 <h4 className="text-xl font-semibold text-white">{training.subtitle}</h4>
                 <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-300">{training.text}</p>
-                {member && <button onClick={onEdit} className="mt-5 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Pencil className="mr-1 inline h-4 w-4" />Editar textos</button>}
+                {member && training.canEdit && <button onClick={onEdit} className="mt-5 rounded-lg border border-electric-orange/30 bg-electric-orange/10 px-3 py-2 text-sm text-electric-orange"><Pencil className="mr-1 inline h-4 w-4" />Editar textos</button>}
                 {entity && <EntityFiles section="capacitaciones" entity={entity} member={member} onChange={onFilesChange} />}
             </div>
         </div>
@@ -240,10 +241,11 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
             subtitle: entity.content.subtitle || '',
             text: entity.content.text || '',
             files: entity.files || [],
+            canEdit: entity.created_by === member?.codigoUni,
         }));
         if (current.length) return current;
         const legacy = entities.find((entity) => entity.title === 'Programa de Capacitaciones');
-        return legacy ? [{ id: legacy.id, title: legacy.title, subtitle: 'Metodologías y herramientas de clase mundial', text: 'Programa de capacitación disponible.', files: legacy.files || [] }] : [defaultTrainingCard];
+        return legacy ? [{ id: legacy.id, title: legacy.title, subtitle: 'Metodologías y herramientas de clase mundial', text: 'Programa de capacitación disponible.', files: legacy.files || [], canEdit: legacy.created_by === member?.codigoUni }] : [defaultTrainingCard];
     }, [entities]);
     useEffect(() => { setCenterIndex((index) => Math.min(index, Math.max(trainings.length - 1, 0))); }, [trainings.length]);
     useEffect(() => {

@@ -153,8 +153,9 @@ export async function POST(request: NextRequest) {
                 : supabase.from('content_entities').insert(entity);
             const { data, error } = await query
                 .select('id, section, folder, title, description, content, status, created_by, created_at, updated_at')
-                .single();
+                .maybeSingle();
             if (error) throw error;
+            if (!data) return responseError('No tienes permiso para editar este contenido o ya no existe.', 403);
             return NextResponse.json({ success: true, entity: data });
         }
 

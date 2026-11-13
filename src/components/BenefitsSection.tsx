@@ -94,7 +94,7 @@ function useEntities(section: Section, member?: any) {
             const response = await fetch(`/api/content-entities?section=${section}&status=${status}`);
             const data = await response.json();
             if (!response.ok || !data.success) throw new Error(data.message);
-            setEntities((data.entities || []).filter((entity: Entity) => !member?.codigoUni || entity.created_by === member.codigoUni || entity.status === 'published'));
+            setEntities((data.entities || []).filter((entity: Entity) => !member?.codigoUni || entity.status === 'published' || entity.created_by === member.codigoUni));
         } finally { setLoading(false); }
     };
     useEffect(() => { reload().catch(() => setLoading(false)); }, [section, member?.codigoUni]);
@@ -131,7 +131,7 @@ function EntityFiles({ section, entity, member, onChange }: { section: Section; 
         } finally { setBusy(false); }
     };
     return <div className="mt-4 border-t border-white/10 pt-4">
-        {member && entity.created_by === member.codigoUni && <><input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={upload} className="hidden" /><button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50"><Upload className="h-4 w-4" />{busy ? 'Cargando...' : 'Subir afiche, PDF, imagen o documento'}</button></>}
+        {member && <><input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={upload} className="hidden" /><button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50"><Upload className="h-4 w-4" />{busy ? 'Cargando...' : 'Subir afiche, PDF, imagen o documento'}</button></>}
         <div className="mt-2 space-y-2">{entity.files.map((file) => <div key={file.id} className="flex items-center justify-between rounded-lg border border-blue-500/20 bg-blue-500/5 p-2 text-sm">
             <span className="flex min-w-0 items-center gap-2 text-blue-300">{file.mimeType.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}<span className="truncate">{file.name}</span></span><PreviewFile file={file} />
         </div>)}</div>
@@ -156,7 +156,7 @@ function EventosModal({ onClose, member }: { onClose: () => void; member?: any }
     const [creating, setCreating] = useState(false);
     const [message, setMessage] = useState('');
     const events = useMemo(() => {
-        const current = entities.filter((entity) => entity.content?.kind === 'event').map((entity) => ({ id: entity.id, ...entity.content, files: entity.files, canEdit: entity.created_by === member?.codigoUni }));
+        const current = entities.filter((entity) => entity.content?.kind === 'event').map((entity) => ({ id: entity.id, ...entity.content, files: entity.files, canEdit: Boolean(member) }));
         if (current.length) return current as EventItem[];
         const legacy = entities.find((entity) => Array.isArray(entity.content?.proximos) || Array.isArray(entity.content?.pasados));
         if (legacy) {
@@ -241,11 +241,11 @@ function CapacitacionesModal({ onClose, member }: { onClose: () => void; member?
             subtitle: entity.content.subtitle || '',
             text: entity.content.text || '',
             files: entity.files || [],
-            canEdit: entity.created_by === member?.codigoUni,
+            canEdit: Boolean(member),
         }));
         if (current.length) return current;
         const legacy = entities.find((entity) => entity.title === 'Programa de Capacitaciones');
-        return legacy ? [{ id: legacy.id, title: legacy.title, subtitle: 'Metodologías y herramientas de clase mundial', text: 'Programa de capacitación disponible.', files: legacy.files || [], canEdit: legacy.created_by === member?.codigoUni }] : [defaultTrainingCard];
+        return legacy ? [{ id: legacy.id, title: legacy.title, subtitle: 'Metodologías y herramientas de clase mundial', text: 'Programa de capacitación disponible.', files: legacy.files || [], canEdit: Boolean(member) }] : [defaultTrainingCard];
     }, [entities]);
     useEffect(() => { setCenterIndex((index) => Math.min(index, Math.max(trainings.length - 1, 0))); }, [trainings.length]);
     useEffect(() => {

@@ -123,6 +123,14 @@ export async function POST(request: NextRequest) {
             if (!FOLDER_SECTIONS.has(section)) return responseError('Esta sección no admite carpetas.');
             const name = String(body.name || '').trim().replace(/\s+/g, ' ');
             if (!name || name.length > 80) return responseError('Indica un nombre de carpeta válido.');
+            const existingFolder = await supabase
+                .from('content_folders')
+                .select('name')
+                .eq('section', section as 'biblioteca' | 'pmo' | 'metodologias' | 'documentacion')
+                .eq('name', name)
+                .maybeSingle();
+            if (existingFolder.error && existingFolder.error.code !== '42P01') throw existingFolder.error;
+            if (existingFolder.data) return NextResponse.json({ success: true, folder: existingFolder.data.name });
             const { data, error } = await supabase
                 .from('content_folders')
                 .insert({ section: section as 'biblioteca' | 'pmo' | 'metodologias' | 'documentacion', name, created_by: member.codigoUni })
@@ -149,13 +157,13 @@ export async function POST(request: NextRequest) {
             };
             const id = body.id ? String(body.id) : '';
             const query = id
-                ? supabase.from('content_entities').update(entity).eq('id', id).eq('created_by', member.codigoUni)
+                ? supabase.from('content_entities').update(entity).eq('id', id).eq('section', section)
                 : supabase.from('content_entities').insert(entity);
             const { data, error } = await query
                 .select('id, section, folder, title, description, content, status, created_by, created_at, updated_at')
                 .maybeSingle();
             if (error) throw error;
-            if (!data) return responseError('No tienes permiso para editar este contenido o ya no existe.', 403);
+            if (!data) return responseError('El contenido ya no existe.', 404);
             return NextResponse.json({ success: true, entity: data });
         }
 
@@ -165,17 +173,16 @@ export async function POST(request: NextRequest) {
             const mimeType = String(body.mimeType || '');
             const base64 = String(body.base64 || '');
             if (!entityId || !fileName || !base64 || !ALLOWED_MIME_TYPES.has(mimeType)) {
-                return responseError('Selecciona un PDF o imagen válido.');
+                return responseError('Selecciona un PDF, imagen, Word, PowerPoint o Excel válido.');
             }
             const { data: ownedEntity, error: entityError } = await supabase
                 .from('content_entities')
                 .select('id')
                 .eq('id', entityId)
                 .eq('section', section)
-                .eq('created_by', member.codigoUni)
                 .maybeSingle();
             if (entityError) throw entityError;
-            if (!ownedEntity) return responseError('No tienes permiso para modificar este contenido.', 403);
+            if (!ownedEntity) return responseError('El contenido ya no existe.', 404);
 
             const buffer = Buffer.from(base64, 'base64');
             if (buffer.byteLength > MAX_FILE_SIZE) return responseError('El archivo no puede superar 8 MB.');
@@ -218,15 +225,14 @@ export async function POST(request: NextRequest) {
                 .select('id')
                 .eq('id', id)
                 .eq('section', section)
-                .eq('created_by', member.codigoUni)
                 .maybeSingle();
             if (findError) throw findError;
-            if (!entity) return responseError('No tienes permiso para eliminar este contenido.', 403);
+            if (!entity) return responseError('El contenido ya no existe.', 404);
             const { error } = await supabase
                 .from('content_entities')
                 .delete()
                 .eq('id', id)
-                .eq('created_by', member.codigoUni);
+                .eq('section', section);
             if (error) throw error;
             return NextResponse.json({ success: true });
         }

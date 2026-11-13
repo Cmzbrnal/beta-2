@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         if (action === 'delete') {
             const id = String(body.id || '');
             if (!id) return errorResponse('Falta el espacio que deseas eliminar.');
-            const { error } = await supabase.from('content_spaces').delete().eq('id', id).eq('is_default', false).eq('created_by', member.codigoUni);
+            const { error } = await supabase.from('content_spaces').delete().eq('id', id).eq('is_default', false);
             if (error) throw error;
             return NextResponse.json({ success: true });
         }

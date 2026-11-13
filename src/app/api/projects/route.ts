@@ -140,12 +140,11 @@ export async function POST(request: NextRequest) {
                 .from('content_files')
                 .select('storage_path')
                 .eq('id', fileId)
-                .eq('member_code', member.codigoUni)
                 .single();
             if (findError) throw findError;
             const remove = await supabase.storage.from('contenido-publico').remove([file.storage_path]);
             if (remove.error) throw remove.error;
-            const { error } = await supabase.from('content_files').delete().eq('id', fileId).eq('member_code', member.codigoUni);
+            const { error } = await supabase.from('content_files').delete().eq('id', fileId);
             if (error) throw error;
             return NextResponse.json({ success: true });
         }
@@ -184,7 +183,6 @@ export async function POST(request: NextRequest) {
                     .from('projects')
                     .select('id')
                     .eq('title', title)
-                    .eq('created_by', member.codigoUni)
                     .maybeSingle();
                 if (existingError) throw existingError;
                 projectId = existing?.id || '';
@@ -192,13 +190,13 @@ export async function POST(request: NextRequest) {
             const query = projectId
                 ? supabase.from('projects').update(project).eq('id', projectId)
                 : supabase.from('projects').insert({ ...project, created_by: member.codigoUni });
-            const { data, error } = await query.select('id, title, description, image_url, content, status, created_at, updated_at').single();
+            const { data, error } = await query.select('id, title, description, image_url, content, status, created_at, updated_at').maybeSingle();
             if (error) throw error;
+            if (!data) return errorResponse('El proyecto ya no existe.', 404);
             if (action === 'publish') {
                 const { error: filesError } = await supabase
                     .from('content_files')
                     .update({ project: data.id })
-                    .eq('member_code', member.codigoUni)
                     .eq('project', title);
                 if (filesError) throw filesError;
             }

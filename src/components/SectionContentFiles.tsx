@@ -50,8 +50,7 @@ export default function SectionContentFiles({
                 setFolders(data.folders || ['General']);
                 const current = data.entities?.find((item: Entity) =>
                     item.title === title &&
-                    (item.folder === folder || (!member && !item.folder)) &&
-                    (!member?.codigoUni || item.created_by === member.codigoUni)
+                    (item.folder === folder || (!member && !item.folder))
                 ) || (!member ? data.entities?.find((item: Entity) => item.title === title) : undefined);
                 if (current) {
                     setEntity(current);

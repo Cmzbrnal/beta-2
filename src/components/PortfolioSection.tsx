@@ -110,9 +110,14 @@ function ProjectModal({
         const file = event.target.files?.[0];
         event.target.value = '';
         if (!file || !member?.codigoUni) return;
-        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+        const allowed = [
+            'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
         if (!allowed.includes(file.type) || file.size > 3 * 1024 * 1024) {
-            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 3 MB.');
+            setMessage('Usa PDF, imagen, Word, PowerPoint o Excel de máximo 3 MB.');
             return;
         }
         setUploading(true);
@@ -335,7 +340,7 @@ function ProjectModal({
                         </div>
                         {member && (
                             <div className="mt-3 flex items-center gap-2 flex-wrap">
-                                <input ref={fileInputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadProjectFile} className="hidden" />
+                                <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={uploadProjectFile} className="hidden" />
                                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-sm font-medium hover:bg-blue-500/20 transition-all disabled:opacity-50">
                                     <Upload className="w-4 h-4" />
                                     {uploading ? 'Subiendo...' : 'Subir archivo'}
@@ -438,9 +443,14 @@ function ProjectEditor({
         const file = event.target.files?.[0];
         event.target.value = '';
         if (!file || !project?.id) return;
-        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+        const allowed = [
+            'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
         if (!allowed.includes(file.type) || file.size > 8 * 1024 * 1024) {
-            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 8 MB.');
+            setMessage('Usa PDF, imagen, Word, PowerPoint o Excel de máximo 8 MB.');
             return;
         }
 
@@ -552,9 +562,9 @@ function ProjectEditor({
                             <p className="mt-1 text-xs text-gray-500">Puedes agregar varios PDFs o imágenes además del banner.</p>
                             {project?.id ? (
                                 <>
-                                    <input ref={fileInputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadProjectFile} className="hidden" />
+                                    <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={uploadProjectFile} className="hidden" />
                                     <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile} className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm text-blue-300 disabled:opacity-50">
-                                        {uploadingFile ? 'Cargando...' : 'Subir PDF o imagen'}
+                                        {uploadingFile ? 'Cargando...' : 'Subir PDF, imagen o documento'}
                                     </button>
                                     {files.length > 0 && (
                                         <div className="mt-3 space-y-2">

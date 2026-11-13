@@ -122,9 +122,14 @@ export default function SectionContentFiles({
             setMessage('Debes iniciar sesión como miembro.');
             return;
         }
-        const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+        const allowed = [
+            'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
         if (!allowed.includes(file.type) || file.size > 8 * 1024 * 1024) {
-            setMessage('Usa PDF, PNG, JPG, WEBP o GIF de máximo 8 MB.');
+            setMessage('Usa PDF, imagen, Word, PowerPoint o Excel de máximo 8 MB.');
             return;
         }
 
@@ -217,9 +222,9 @@ export default function SectionContentFiles({
                         <button onClick={() => saveDescription(true)} disabled={busy} className="flex items-center gap-2 rounded-lg bg-electric-orange px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
                             Publicar contenido
                         </button>
-                        <input ref={inputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={uploadFile} className="hidden" />
+                        <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={uploadFile} className="hidden" />
                         <button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50">
-                            <Upload className="h-4 w-4" /> Subir PDF o imagen
+                            <Upload className="h-4 w-4" /> Subir PDF, imagen, Word, PowerPoint o Excel
                         </button>
                     </div>
                 </>

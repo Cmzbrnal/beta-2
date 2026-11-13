@@ -113,7 +113,12 @@ function EntityFiles({ section, entity, member, onChange }: { section: Section; 
     const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]; event.target.value = '';
         if (!file || !member?.codigoUni) return;
-        if (!['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type) || file.size > 8 * 1024 * 1024) return;
+        if (![
+            'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ].includes(file.type) || file.size > 8 * 1024 * 1024) return;
         setBusy(true);
         try {
             const base64 = await new Promise<string>((resolve, reject) => {
@@ -125,7 +130,7 @@ function EntityFiles({ section, entity, member, onChange }: { section: Section; 
         } finally { setBusy(false); }
     };
     return <div className="mt-4 border-t border-white/10 pt-4">
-        {member && <><input ref={inputRef} type="file" accept=".pdf,image/png,image/jpeg,image/webp,image/gif" onChange={upload} className="hidden" /><button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50"><Upload className="h-4 w-4" />{busy ? 'Cargando...' : 'Subir afiche, PDF o imagen'}</button></>}
+        {member && <><input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/png,image/jpeg,image/webp,image/gif" onChange={upload} className="hidden" /><button onClick={() => inputRef.current?.click()} disabled={busy} className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-300 disabled:opacity-50"><Upload className="h-4 w-4" />{busy ? 'Cargando...' : 'Subir afiche, PDF, imagen o documento'}</button></>}
         <div className="mt-2 space-y-2">{entity.files.map((file) => <div key={file.id} className="flex items-center justify-between rounded-lg border border-blue-500/20 bg-blue-500/5 p-2 text-sm">
             <span className="flex min-w-0 items-center gap-2 text-blue-300">{file.mimeType.startsWith('image/') ? <ImageIcon className="h-4 w-4" /> : <FileText className="h-4 w-4" />}<span className="truncate">{file.name}</span></span><PreviewFile file={file} />
         </div>)}</div>

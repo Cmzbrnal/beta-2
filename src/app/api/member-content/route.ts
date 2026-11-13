@@ -7,7 +7,13 @@ const ALLOWED_MIME_TYPES = new Set([
     'image/png',
     'image/jpeg',
     'image/webp',
-    'image/gif'
+    'image/gif',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 ]);
 
 function jsonError(message: string, status = 502) {

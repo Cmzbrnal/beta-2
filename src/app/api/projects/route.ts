@@ -5,7 +5,12 @@ import { MEMBER_SESSION_COOKIE, readMemberSession } from '@/lib/member-session';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
-const ALLOWED_FILE_TYPES = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+const ALLOWED_FILE_TYPES = new Set([
+    'application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/gif',
+    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
 
 function errorResponse(message: string, status = 400) {
     return NextResponse.json({ success: false, message }, { status });
@@ -104,7 +109,7 @@ export async function POST(request: NextRequest) {
             const fileName = String(body.fileName || '');
             const base64 = String(body.base64 || '');
             if (!projectId || !fileName || !base64 || !ALLOWED_FILE_TYPES.has(mimeType)) {
-                return errorResponse('Selecciona un PDF o imagen válido.');
+                return errorResponse('Selecciona un PDF, imagen, Word, PowerPoint o Excel válido.');
             }
             const buffer = Buffer.from(base64, 'base64');
             if (buffer.byteLength > MAX_FILE_SIZE) return errorResponse('El archivo no puede superar 8 MB.');

@@ -9,6 +9,12 @@ const ALLOWED_MIME_TYPES = new Set([
     'image/jpeg',
     'image/webp',
     'image/gif',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ]);
 const SECTIONS = new Set(['biblioteca', 'eventos', 'capacitaciones', 'pmo', 'metodologias', 'documentacion']);
 const FOLDER_SECTIONS = new Set(['biblioteca', 'pmo', 'metodologias', 'documentacion']);
